@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Technical Interview Generator</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Client-side PDF and DOCX text extractors -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <!-- Firebase SDK compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Left Sidebar Controls -->
+    <aside class="sidebar">
+      <h2>Candidate Assessment</h2>
+      
+      <!-- Mode Toggle Container -->
+      <div class="mode-toggle-container" style="grid-template-columns: repeat(3, 1fr);">
+        <button class="mode-toggle-btn active" id="mode-kit-btn">Assessment</button>
+        <button class="mode-toggle-btn" id="mode-screener-btn">CV Screener</button>
+        <button class="mode-toggle-btn" id="mode-history-btn">Reports History</button>
+      </div>
+      
+      <!-- Role Selection -->
+      <div class="sidebar-group">
+        <label class="sidebar-label" for="role-select">Select Target Role</label>
+        <select class="sidebar-select" id="role-select">
+          <option value="java-angular">Java + Angular Full Stack Developer</option>
+          <option value="ai-engineer">Lead AI Engineer</option>
+          <option value="ai-architect">Lead AI Architect</option>
+        </select>
+      </div>
+
+      <!-- Job Description Upload/Input -->
+      <div class="sidebar-group">
+        <label class="sidebar-label" for="jd-text">Job Description (JD)</label>
+        <textarea class="sidebar-textarea" id="jd-text" placeholder="Paste or drag job requirements here..."></textarea>
+        <div class="file-upload-zone" id="jd-dropzone" style="margin-top: 8px;">
+          <span>Drag & Drop or Click to Upload JD file (PDF, Word, Text)</span>
+          <input type="file" id="jd-file" accept=".pdf,.doc,.docx,.txt,.md,.json,.yml,.yaml,.xml,.csv">
+        </div>
+        <ul class="file-list" id="jd-file-list"></ul>
+      </div>
+
+      <!-- Interview Kit Mode Inputs (Flow 2) -->
+      <div id="sidebar-kit-inputs">
+        <!-- Candidate CV Upload/Input -->
+        <div class="sidebar-group">
+          <label class="sidebar-label" for="cv-text">Candidate CV / Resume (Optional)</label>
+          <textarea class="sidebar-textarea" id="cv-text" placeholder="Paste or drag candidate resume here..."></textarea>
+          <div class="file-upload-zone" id="cv-dropzone" style="margin-top: 8px;">
+            <span>Drag & Drop or Click to Upload CV file (PDF, Word, Text)</span>
+            <input type="file" id="cv-file" accept=".pdf,.doc,.docx,.txt,.md,.json,.yml,.yaml,.xml,.csv">
+          </div>
+          <ul class="file-list" id="cv-file-list"></ul>
+          <button type="button" class="btn-link" id="btn-load-sample-cv" style="margin-top: 6px; font-size: 0.8rem; background: none; border: none; color: var(--text-muted); cursor: pointer; text-decoration: underline; padding: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">Load Sample CV / Resume</button>
+        </div>
+
+        <!-- Action Buttons -->
+        <button class="btn-primary" id="btn-generate">Start Assessment</button>
+        <button class="btn-secondary" id="btn-load-demo">Load Preset Demo</button>
+      </div>
+
+      <!-- CV Screener Mode Inputs (Flow 1) -->
+      <div id="sidebar-screener-inputs" style="display: none;">
+        <div class="sidebar-group">
+          <label class="sidebar-label">Bulk CV / Resume Upload</label>
+          <div class="file-upload-zone" id="bulk-cv-dropzone" style="margin-top: 8px;">
+            <span>Drag & Drop or Click to Upload Resumes</span>
+            <input type="file" id="bulk-cv-files" accept=".pdf,.doc,.docx,.txt" multiple>
+          </div>
+          <ul class="file-list" id="bulk-cv-file-list"></ul>
+        </div>
+
+        <button class="btn-primary" id="btn-screen-candidates">Screen Resumes</button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- Welcome Dashboard / Home State -->
+      <section class="welcome-dashboard" id="welcome-dashboard">
+        <h1>AI Technical Interview Generator</h1>
+        <p class="welcome-intro">
+          Generate comprehensive, structured candidate evaluations or screen multiple resumes against Job Descriptions.
+        </p>
+        
+        <h3 style="border: none; font-size: 1.15rem; font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-transform: uppercase; margin-bottom: 12px; font-weight: bold;">
+          Select a Preset Quick-Start
+        </h3>
+        
+        <div class="presets-grid">
+          <!-- Preset Card 1 -->
+          <div class="preset-card" data-role="java-angular">
+            <h3>Full Stack Developer</h3>
+            <p>Java 17, Spring Boot microservices, Kafka pipelines, and Angular state management.</p>
+            <span class="preset-badge">40 Questions | 3 Projects</span>
+          </div>
+          
+          <!-- Preset Card 2 -->
+          <div class="preset-card" data-role="ai-engineer">
+            <h3>Lead AI Engineer</h3>
+            <p>Generative AI RAG pipelines, LangGraph/LangChain multi-agents, and pgvector embeddings.</p>
+            <span class="preset-badge">50 Questions | 3 Projects</span>
+          </div>
+          
+          <!-- Preset Card 3 -->
+          <div class="preset-card" data-role="ai-architect">
+            <h3>Lead AI Architect</h3>
+            <p>Federated gateways, EU AI Act compliance, model serving enclaves, and observability.</p>
+            <span class="preset-badge">60 Questions | 3 Projects</span>
+          </div>
+        </div>
+
+        <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 0.9rem; color: var(--text-muted); border-top: 1px solid var(--border-light); padding-top: 20px; text-align: center;">
+          Select **Assessment** mode to generate interviewer guides, or **CV Screener** mode to batch-screen multiple CVs against job specifications.
+        </div>
+      </section>
+
+      <!-- Processing/Loading Pipeline State -->
+      <section class="loading-view" id="loading-view">
+        <div class="spinner"></div>
+        <h2 id="loading-title" style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-transform: uppercase; font-size: 1.25rem; margin-bottom: 10px;">
+          Generating Assessment...
+        </h2>
+        <p id="loading-desc" style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px;">
+          Please wait. Sequentially generating evaluation blocks to bypass token constraints.
+        </p>
+        <ul class="loading-steps" id="loading-steps-list">
+          <li class="loading-step pending" id="step-1">Ingesting Requirements & Skill Mapping</li>
+          <li class="loading-step pending" id="step-2">Generating Set 1 (Standard Difficulty)</li>
+          <li class="loading-step pending" id="step-3">Generating Set 2 (Advanced Difficulty)</li>
+          <li class="loading-step pending" id="step-4">Generating Set 3 (Expert Difficulty)</li>
+        </ul>
+      </section>
+
+      <!-- Results Container -->
+      <section class="results-container" id="results-container">
+        <!-- Tabs Navigation -->
+        <nav class="tabs-navigation">
+          <button class="tab-btn active" id="tab-overview-btn">Strategy Overview</button>
+          <button class="tab-btn" id="tab-set1-btn">Set 1: Standard</button>
+          <button class="tab-btn" id="tab-set2-btn">Set 2: Advanced</button>
+          <button class="tab-btn" id="tab-set3-btn">Set 3: Expert</button>
+          <button class="tab-btn" id="tab-export-btn">Export Assessment</button>
+        </nav>
+
+        <!-- Dynamic Results Pane -->
+        <div class="results-pane" id="results-pane">
+          <!-- Content rendered dynamically via JS -->
+        </div>
+      </section>
+
+      <!-- Batch Candidate Screener Dashboard -->
+      <section class="results-container" id="screener-dashboard" style="display: none;">
+        <nav class="tabs-navigation">
+          <button class="tab-btn active">Batch Screening Report</button>
+          <button class="tab-btn" id="btn-screener-back-home" style="margin-left: auto; border-left: 1px solid var(--border-color); border-right: none; text-transform: uppercase; font-weight: 700; font-size: 0.8rem; cursor: pointer; color: var(--text-muted);">Back to Home</button>
+        </nav>
+        <div class="results-pane" id="screener-pane">
+          <!-- Content rendered dynamically via JS -->
+        </div>
+      </section>
+      
+      <!-- Reports History Dashboard -->
+      <section class="results-container" id="history-dashboard" style="display: none;">
+        <nav class="tabs-navigation">
+          <button class="tab-btn active">Evaluation & Screening History</button>
+          <button class="tab-btn" id="btn-history-back-home" style="margin-left: auto; border-left: 1px solid var(--border-color); border-right: none; text-transform: uppercase; font-weight: 700; font-size: 0.8rem; cursor: pointer; color: var(--text-muted);">Back to Home</button>
+        </nav>
+        <div class="results-pane" id="history-pane">
+          <!-- Content rendered dynamically via JS -->
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="presets.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

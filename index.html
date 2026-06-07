@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Technical Interview Generator</title>
   <link rel="stylesheet" href="style.css">
+  <!-- Google Fonts for Seeburger Branding -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- Client-side PDF and DOCX text extractors -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
@@ -85,14 +89,20 @@
       
       <!-- Welcome Dashboard / Home State -->
       <section class="welcome-dashboard" id="welcome-dashboard">
-        <h1>AI Technical Interview Generator</h1>
-        <p class="welcome-intro">
-          Generate comprehensive, structured candidate evaluations or screen multiple resumes against Job Descriptions.
-        </p>
         
-        <h3 style="border: none; font-size: 1.15rem; font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-transform: uppercase; margin-bottom: 12px; font-weight: bold;">
-          Select a Preset Quick-Start
-        </h3>
+        <div class="hero-banner">
+          <div id="welcome-assessment">
+            <h1>SEEBURGER <strong>Technical Evaluation</strong> & Interview Assessment</h1>
+            <p class="hero-intro">Design comprehensive, multi-round technical interview kits tailored specifically for your engineering departments.</p>
+          </div>
+          <div id="welcome-screener" style="display: none;">
+            <h1>SEEBURGER <strong>Batch Candidate</strong> Profiling & Screening</h1>
+            <p class="hero-intro">Automated profile screening and match-scoring to help HR teams instantly identify top-tier talent from bulk resume uploads.</p>
+          </div>
+        </div>
+
+        <div class="dashboard-content">
+          <h3 class="section-title">Select a Preset Quick-Start</h3>
         
         <div class="presets-grid">
           <!-- Preset Card 1 -->
@@ -117,8 +127,6 @@
           </div>
         </div>
 
-        <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 0.9rem; color: var(--text-muted); border-top: 1px solid var(--border-light); padding-top: 20px; text-align: center;">
-          Select **Assessment** mode to generate interviewer guides, or **CV Screener** mode to batch-screen multiple CVs against job specifications.
         </div>
       </section>
 

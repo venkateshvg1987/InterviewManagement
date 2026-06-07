@@ -138,6 +138,8 @@ document.addEventListener("DOMContentLoaded", () => {
   loadPanelistConfiguration();
 });
 
+
+
 // Setup Sample CV click handler
 function setupSampleCvLoader() {
   btnLoadSampleCv.addEventListener("click", () => {
@@ -155,6 +157,8 @@ function setupSampleCvLoader() {
 function setupModeSelector() {
   const modeHistoryBtn = document.getElementById("mode-history-btn");
   const historyDashboard = document.getElementById("history-dashboard");
+  const welcomeAssessment = document.getElementById("welcome-assessment");
+  const welcomeScreener = document.getElementById("welcome-screener");
 
   modeKitBtn.addEventListener("click", () => {
     currentMode = "kit";
@@ -169,6 +173,8 @@ function setupModeSelector() {
     historyDashboard.style.display = "none";
     loadingView.style.display = "none";
     welcomeDashboard.style.display = "block";
+    if (welcomeAssessment) welcomeAssessment.style.display = "block";
+    if (welcomeScreener) welcomeScreener.style.display = "none";
   });
 
   modeScreenerBtn.addEventListener("click", () => {
@@ -184,6 +190,8 @@ function setupModeSelector() {
     historyDashboard.style.display = "none";
     loadingView.style.display = "none";
     welcomeDashboard.style.display = "block";
+    if (welcomeAssessment) welcomeAssessment.style.display = "none";
+    if (welcomeScreener) welcomeScreener.style.display = "block";
   });
 
   modeHistoryBtn.addEventListener("click", () => {
@@ -1643,7 +1651,7 @@ function renderScorecardHTML() {
       <h3>Multi-Round Panel Evaluation Scorecard</h3>
       
       <div style="margin-bottom: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
-        <label style="font-weight: bold; display: block; margin-bottom: 6px; color: var(--text-headers);">Candidate Name (Key Element):</label>
+        <label style="font-weight: bold; display: block; margin-bottom: 6px; color: var(--text-headers);">Candidate Name:</label>
         <input type="text" id="scorecard-candidate-name" value="${candidateName}" placeholder="Enter candidate name to link scorecard..." style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.95rem; font-family: inherit;" onchange="handleScorecardNameChange(this.value)">
       </div>
       

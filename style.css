@@ -1,29 +1,36 @@
-/* Professional Purple & White Theme (No Black, White Backgrounds, Deep Purple Text, Smooth Gradients) */
+/* Seeburger-Inspired Corporate Theme (Rich Red, Orange Accents, Gray Backgrounds) */
 
 :root {
   --bg-primary: #ffffff; /* White background */
-  --bg-card: #ffffff; /* White paper cards */
-  --bg-sidebar: #fbfaff; /* Light lavender-white sidebar background */
-  --bg-sidebar-input: #ffffff; /* Clean white input boxes */
+  --bg-card: #ffffff; /* Pure white cards */
+  --bg-sidebar: #960a0a; /* Red sidebar */
+  --bg-sidebar-input: #ffffff; /* White inputs in sidebar */
   
-  --text-primary: #4c1d95; /* Deep purple body text */
-  --text-headers: #2e0854; /* Rich royal purple for headings */
-  --text-muted: #7c3aed; /* Soft violet for muted text */
+  --text-primary: #1f2125; /* Dark gray body text */
+  --text-headers: #111827; /* Near black headings */
+  --text-muted: #686d76; /* Medium gray */
+  --text-sidebar: #ffffff; /* White text for red sidebar */
+  --text-sidebar-muted: #fecaca; /* Light red/pink */
   
-  --border-color: #ddd6fe; /* Muted lavender border */
-  --border-light: #f5f3ff; /* Very soft lavender border */
+  --border-color: #e5e7eb; 
+  --border-light: #f3f4f6; 
+  --border-sidebar: #b91c1c; 
   
-  /* Smooth Purple-Violet Gradients */
-  --gradient-primary: linear-gradient(135deg, #6d28d9, #a78bfa); /* Smooth purple to soft lavender */
-  --gradient-hover: linear-gradient(135deg, #5b21b6, #8b5cf6); /* Deepened purple hover */
-  --gradient-tabs: linear-gradient(90deg, #f5f3ff, #ffffff); /* Soft horizontal lavender-white */
+  /* Seeburger Brand Colors */
+  --brand-red: #960a0a;
+  --brand-orange: #ff5f1e;
   
-  --shadow-sm: 0 1px 3px rgba(109, 40, 217, 0.05);
-  --shadow-md: 0 4px 10px rgba(109, 40, 217, 0.08);
-  --shadow-lg: 0 10px 25px rgba(109, 40, 217, 0.12);
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, var(--brand-orange), #ea580c); /* Orange button gradient */
+  --gradient-hover: linear-gradient(135deg, #ea580c, #c2410c);
+  --gradient-tabs: linear-gradient(90deg, #f9fafb, #ffffff);
+  
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
 }
 
 * {
@@ -33,16 +40,14 @@
 }
 
 body {
-  font-family: "Times New Roman", Times, Georgia, serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.6;
   min-height: 100vh;
-  display: flex;
-  overflow: hidden;
 }
 
-/* Scrollbar customization in purple */
+/* Scrollbar customization */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -51,34 +56,36 @@ body {
   background: var(--bg-primary);
 }
 ::-webkit-scrollbar-thumb {
-  background: #c084fc;
+  background: #3f4147;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #a78bfa;
+  background: #000000;
 }
 
 /* Main Container Layout */
 .app-container {
   display: flex;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
+  width: 100%;
+  min-height: 100vh;
 }
 
-/* Left Sidebar Controls - Light Lavender White */
+/* Left Sidebar Controls */
 .sidebar {
   width: 360px;
   background-color: var(--bg-sidebar);
-  border-right: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-sidebar);
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 100vh;
   overflow-y: auto;
   padding: 28px 24px;
   z-index: 10;
   flex-shrink: 0;
-  color: var(--text-primary);
+  color: var(--text-sidebar);
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 
 .sidebar h2, .sidebar label, .sidebar button, .sidebar select, .sidebar input, .sidebar span {
@@ -89,10 +96,10 @@ body {
   font-size: 1.15rem;
   font-weight: 700;
   margin-bottom: 24px;
-  color: var(--text-headers);
+  color: var(--text-sidebar);
   text-transform: uppercase;
   letter-spacing: 1px;
-  border-bottom: 2px solid var(--text-headers);
+  border-bottom: 2px solid var(--border-sidebar);
   padding-bottom: 12px;
 }
 
@@ -106,26 +113,26 @@ body {
   font-weight: 600;
   margin-bottom: 8px;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--text-sidebar-muted);
   letter-spacing: 0.5px;
 }
 
 .sidebar-select, .sidebar-textarea, .sidebar-input {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-sidebar);
   border-radius: var(--radius-sm);
   background-color: var(--bg-sidebar-input);
   color: var(--text-primary);
   font-size: 0.9rem;
   transition: border-color 0.2s, box-shadow 0.2s;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .sidebar-select:focus, .sidebar-textarea:focus, .sidebar-input:focus {
   outline: none;
-  border-color: var(--text-muted);
-  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.15);
+  border-color: var(--brand-orange);
+  box-shadow: 0 0 0 2px rgba(255, 95, 30, 0.15);
 }
 
 .sidebar-textarea {
@@ -135,22 +142,22 @@ body {
 
 /* File Upload Dropzones */
 .file-upload-zone {
-  border: 1px dashed var(--border-color);
+  border: 1px dashed var(--border-sidebar);
   padding: 14px;
   text-align: center;
   border-radius: var(--radius-sm);
-  background-color: #faf8ff;
+  background-color: var(--bg-sidebar-input);
   cursor: pointer;
   transition: background-color 0.2s, border-color 0.2s, color 0.2s;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: var(--text-sidebar-muted);
 }
 
 .file-upload-zone:hover {
-  background-color: #f3eeff;
-  border-color: var(--text-muted);
-  color: var(--text-headers);
+  background-color: #4a4d53;
+  border-color: var(--brand-orange);
+  color: #ffffff;
 }
 
 .file-upload-zone input[type="file"] {
@@ -174,7 +181,7 @@ body {
   padding: 4px 8px;
   border-radius: var(--radius-sm);
   margin-bottom: 4px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-sidebar);
 }
 
 .file-remove {
@@ -184,7 +191,7 @@ body {
   margin-left: 8px;
 }
 
-/* Primary buttons with smooth purple gradients */
+/* Primary buttons with smooth red gradients */
 .btn-primary {
   width: 100%;
   padding: 12px 20px;
@@ -199,12 +206,12 @@ body {
   transition: background 0.3s, transform 0.1s, box-shadow 0.2s;
   letter-spacing: 0.5px;
   margin-top: 12px;
-  box-shadow: 0 2px 4px rgba(109, 40, 217, 0.15);
+  box-shadow: 0 4px 8px rgba(150, 10, 10, 0.25);
 }
 
 .btn-primary:hover {
   background: var(--gradient-hover);
-  box-shadow: 0 4px 12px rgba(109, 40, 217, 0.25);
+  box-shadow: 0 6px 14px rgba(255, 95, 30, 0.3);
 }
 
 .btn-primary:active {
@@ -215,8 +222,8 @@ body {
   width: 100%;
   padding: 10px 16px;
   background-color: transparent;
-  color: var(--text-muted);
-  border: 1px solid var(--text-muted);
+  color: var(--text-sidebar-muted);
+  border: 1px solid var(--border-sidebar);
   border-radius: var(--radius-sm);
   font-size: 0.85rem;
   font-weight: 600;
@@ -227,9 +234,9 @@ body {
 }
 
 .btn-secondary:hover {
-  background-color: #f5f3ff;
-  color: var(--text-headers);
-  border-color: var(--text-headers);
+  background-color: var(--bg-sidebar-input);
+  color: #ffffff;
+  border-color: var(--text-sidebar-muted);
 }
 
 /* Advanced Configuration Accordion */
@@ -267,40 +274,61 @@ body {
 /* Main Content Area - White background */
 .main-content {
   flex-grow: 1;
-  height: 100%;
-  overflow-y: auto;
+  min-height: 100vh;
+  margin-left: 360px;
   background-color: var(--bg-primary);
   padding: 40px;
-  display: flex;
-  flex-direction: column;
+  display: block;
 }
 
 /* Welcome Dashboard */
 .welcome-dashboard {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  padding: 48px;
   border-radius: var(--radius-md);
   max-width: 960px;
-  margin: auto;
+  margin: 0 auto;
   box-shadow: var(--shadow-md);
+  overflow: hidden;
 }
 
-.welcome-dashboard h1 {
-  font-size: 2.2rem;
+.hero-banner {
+  background-color: var(--brand-red);
+  color: #ffffff;
+  padding: 60px 48px;
+  text-align: left;
+}
+
+.hero-banner h1 {
+  font-size: 2.8rem;
+  font-weight: 300;
   margin-bottom: 16px;
-  text-align: center;
-  color: var(--text-headers);
-  border-bottom: 2px solid var(--text-headers);
-  padding-bottom: 15px;
+  letter-spacing: -0.5px;
+  color: #ffffff;
+  line-height: 1.2;
 }
 
-.welcome-intro {
+.hero-banner h1 strong {
+  font-weight: 700;
+}
+
+.hero-intro {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.95);
+  max-width: 700px;
+  line-height: 1.5;
+}
+
+.dashboard-content {
+  padding: 40px 48px;
+}
+
+.section-title {
   font-size: 1.15rem;
-  color: var(--text-muted);
-  text-align: center;
-  margin-bottom: 36px;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  font-weight: bold;
+  color: var(--text-headers);
 }
 
 .presets-grid {
@@ -447,7 +475,7 @@ body {
 /* Tab Bar Navigation - Lavender/White gradient */
 .tabs-navigation {
   display: flex;
-  background: var(--gradient-tabs);
+  background: var(--bg-card);
   border-bottom: 1px solid var(--border-color);
   overflow-x: auto;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
@@ -468,14 +496,14 @@ body {
 }
 
 .tab-btn:hover {
-  background-color: #f5f3ff;
+  background-color: #fce8e8;
   color: var(--text-headers);
 }
 
 .tab-btn.active {
   background-color: var(--bg-card);
   color: var(--text-headers);
-  border-bottom: 3px solid #7c3aed;
+  border-bottom: 3px solid var(--brand-red);
 }
 
 /* Results Content Pane */
@@ -834,9 +862,9 @@ body {
 
 /* Candidate Insight Card */
 .candidate-insight-card {
-  background-color: #f3e8ff; /* Light purple/lavender background */
-  border: 1px solid var(--text-headers);
-  border-left: 5px solid var(--text-headers);
+  background-color: #fafafa;
+  border: 1px solid var(--border-color);
+  border-left: 5px solid var(--brand-red);
   padding: 20px 24px;
   border-radius: var(--radius-md);
   margin-bottom: 28px;
@@ -858,7 +886,7 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
-  border-bottom: 1px solid rgba(124, 58, 237, 0.2);
+  border-bottom: 1px solid var(--border-color);
   padding-bottom: 10px;
 }
 
@@ -883,11 +911,11 @@ body {
 }
 
 .verdict-badge.potential {
-  background-color: #2563eb; /* Blue */
+  background-color: var(--brand-orange);
 }
 
 .verdict-badge.low {
-  background-color: #ea580c; /* Orange-red */
+  background-color: #ef4444;
 }
 
 .score-percentage-badge {
@@ -944,11 +972,11 @@ body {
 }
 
 .confidence-bar.potential {
-  background-color: #3b82f6;
+  background-color: var(--brand-orange);
 }
 
 .confidence-bar.low {
-  background-color: #f97316;
+  background-color: #ef4444;
 }
 
 .seniority-badge-row {
@@ -975,11 +1003,11 @@ body {
 }
 
 .seniority-badge.intermediate {
-  background-color: #2563eb; /* Blue */
+  background-color: var(--brand-orange);
 }
 
 .seniority-badge.expert {
-  background-color: #7c3aed; /* Purple */
+  background-color: var(--brand-red);
 }
 
 .insight-text {
@@ -1166,7 +1194,7 @@ body {
 /* Horizontal Sub-Navigation Tab Bar */
 .round-tab-bar {
   display: flex;
-  background-color: #f3e8ff;
+  background-color: #f1f5f9;
   border-radius: var(--radius-sm);
   padding: 4px;
   margin-bottom: 24px;
@@ -1197,8 +1225,8 @@ body {
 
 .round-tab-btn.active {
   background-color: #ffffff;
-  color: #7c3aed;
-  box-shadow: 0 1px 3px rgba(109, 40, 217, 0.15);
+  color: var(--brand-red);
+  box-shadow: 0 1px 3px rgba(218, 26, 32, 0.15);
 }
 
 /* Decision Toggle Buttons */
@@ -1341,7 +1369,7 @@ body {
   flex-wrap: wrap;
   gap: 16px;
   align-items: center;
-  background-color: #fbfaff;
+  background-color: #fafafa;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: 12px 20px;
@@ -1404,15 +1432,15 @@ body {
 }
 
 .pagination-btn:hover {
-  background-color: #f5f3ff;
+  background-color: #fce8e8;
   color: var(--text-headers);
   border-color: var(--text-headers);
 }
 
 .pagination-btn.active {
-  background-color: #7c3aed;
+  background-color: var(--brand-red);
   color: #ffffff;
-  border-color: #7c3aed;
+  border-color: var(--brand-red);
 }
 
 .pagination-btn:disabled {

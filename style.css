@@ -79,6 +79,7 @@ body {
   flex-direction: column;
   height: 100vh;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 28px 24px;
   z-index: 10;
   flex-shrink: 0;
@@ -86,6 +87,48 @@ body {
   position: fixed;
   top: 0;
   left: 0;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar.collapsed {
+  width: 60px;
+  padding: 28px 10px;
+}
+
+.sidebar.collapsed > *:not(.sidebar-toggle-btn) {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0s linear 0.2s;
+}
+
+.sidebar > *:not(.sidebar-toggle-btn) {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s ease 0.1s, visibility 0s linear;
+}
+
+.sidebar-toggle-btn {
+  position: absolute;
+  top: 20px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-sidebar);
+  cursor: pointer;
+  font-size: 1.5rem;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.sidebar-toggle-btn:hover {
+  background: rgba(255,255,255,0.1);
 }
 
 .sidebar h2, .sidebar label, .sidebar button, .sidebar select, .sidebar input, .sidebar span {
@@ -279,6 +322,11 @@ body {
   background-color: var(--bg-primary);
   padding: 40px;
   display: block;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.main-content.expanded {
+  margin-left: 60px;
 }
 
 /* Welcome Dashboard */
@@ -561,13 +609,13 @@ body {
 .skills-table {
   width: 100%;
   border-collapse: collapse;
-  margin: 24px 0;
-  font-size: 1.05rem;
+  margin: 16px 0;
+  font-size: 0.95rem;
 }
 
 .skills-table th, .skills-table td {
-  border: 1px solid var(--text-headers);
-  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
   text-align: left;
 }
 
@@ -1302,6 +1350,7 @@ body {
   border-radius: 12px;
   text-align: center;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  white-space: nowrap;
 }
 
 .status-badge.select {

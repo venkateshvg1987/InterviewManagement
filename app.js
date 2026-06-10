@@ -135,6 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupSampleCvLoader();
   setupScreenerActions();
   setupHistoryActions();
+  setupSidebarToggle();
   loadPanelistConfiguration();
 });
 
@@ -389,7 +390,7 @@ function setupScreenerActions() {
         const cvData = parseCV(fileData.content);
         
         if (cvData.name === "the candidate" || cvData.name.trim() === "" || cvData.name.length > 50) {
-          cvData.name = fileData.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+          cvData.name = cleanCandidateName(fileData.name.replace(/\.[^/.]+$/, ""));
         }
 
         const match = calculateMatchMetrics(cvData, jdSkills, jdSeniority.yearsRequired, jdSeniority.level);
@@ -588,6 +589,19 @@ Required Skills:
   });
 }
 
+function setupSidebarToggle() {
+  const sidebarToggleBtn = document.getElementById("sidebar-toggle-btn");
+  const mainSidebar = document.getElementById("main-sidebar");
+  const mainContent = document.getElementById("main-content");
+
+  if (sidebarToggleBtn && mainSidebar && mainContent) {
+    sidebarToggleBtn.addEventListener("click", () => {
+      mainSidebar.classList.toggle("collapsed");
+      mainContent.classList.toggle("expanded");
+    });
+  }
+}
+
 // File Upload Parser
 function setupFileUploads() {
   setupUploadZone("jd-file", "jd-file-list", 'jd');
@@ -757,7 +771,7 @@ btnGenerate.addEventListener("click", async () => {
             // Dynamic, candidate-aware kit generation
             const cvData = parseCV(cvVal);
             if ((cvData.name === "the candidate" || cvData.name.trim() === "" || cvData.name.length > 50) && uploadedFiles.cv) {
-              cvData.name = uploadedFiles.cv.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              cvData.name = cleanCandidateName(uploadedFiles.cv.name.replace(/\.[^/.]+$/, ""));
             } else if (cvData.name === "the candidate" || cvData.name.trim() === "" || cvData.name.length > 50) {
               cvData.name = "Candidate";
             }
@@ -803,10 +817,10 @@ function showResults(kit) {
     if (cvData.name && cvData.name !== "the candidate" && cvData.name !== "Candidate") {
       candidateName = cvData.name;
     } else if (uploadedFiles.cv) {
-      candidateName = uploadedFiles.cv.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      candidateName = cleanCandidateName(uploadedFiles.cv.name.replace(/\.[^/.]+$/, ""));
     }
   } else if (uploadedFiles.cv) {
-    candidateName = uploadedFiles.cv.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    candidateName = cleanCandidateName(uploadedFiles.cv.name.replace(/\.[^/.]+$/, ""));
   }
   
   if (kit.candidateInsight) {
@@ -872,53 +886,23 @@ function renderActiveTab(tabName) {
 }
 
 function renderOverviewTab() {
-  const skills = currentKit.skills || {};
-  let skillsHtml = "";
-  
-  const skillCategories = [
-    { label: "Technical Skills", key: "technical" },
-    { label: "Mandatory Skills", key: "mandatory" },
-    { label: "Preferred Skills", key: "preferred" },
-    { label: "Architecture Requirements", key: "architecture" },
-    { label: "Cloud Requirements", key: "cloud" },
-    { label: "AI Requirements", key: "ai" },
-    { label: "Leadership Expectations", key: "leadership" }
-  ];
-
-  skillCategories.forEach(cat => {
-    const list = skills[cat.key] || [];
-    if (list.length > 0) {
-      skillsHtml += `
-        <tr>
-          <th>${cat.label}</th>
-          <td>
-            <div class="skills-badge-list">
-              ${list.map(s => `<span class="skill-badge">${s}</span>`).join("")}
-            </div>
-          </td>
-        </tr>
-      `;
-    }
-  });
-
   let gapsHtml = "";
   if (currentKit.gaps && currentKit.gaps.length > 0) {
     gapsHtml += `
-      <h3>Job Description vs Candidate CV Gap Analysis</h3>
       <table class="skills-table">
         <thead>
           <tr>
-            <th style="width: 30%;">Skill / Area</th>
-            <th style="width: 20%;">Status</th>
-            <th>Notes / Analysis</th>
+            <th style="width: 25%;">Required Skill (JD)</th>
+            <th style="width: 15%;">Match Status</th>
+            <th>Evaluation Notes & Detected Synonyms</th>
           </tr>
         </thead>
         <tbody>
           ${currentKit.gaps.map(g => `
             <tr>
-              <td style="font-weight: bold;">${g.skill}</td>
+              <td style="font-weight: bold; color: var(--text-headers);">${g.skill}</td>
               <td><span class="gap-tag gap-${g.status}">${g.status}</span></td>
-              <td>${g.notes}</td>
+              <td style="font-size: 0.9rem; color: var(--text-muted);">${g.notes}</td>
             </tr>
           `).join("")}
         </tbody>
@@ -983,16 +967,7 @@ function renderOverviewTab() {
       
       ${insightHtml}
       
-      <h3>Candidate Profile Summary</h3>
-      <p>${currentKit.summary}</p>
-      
-      <h3>Job Description Skill Extraction</h3>
-      <table class="skills-table">
-        <tbody>
-          ${skillsHtml}
-        </tbody>
-      </table>
- 
+      <h3>Candidate Profile & JD Match Summary</h3>
       ${gapsHtml}
       
       ${renderScorecardHTML()}
@@ -1026,48 +1001,62 @@ function renderSetTab(setData, title) {
   `;
 
   // Render Section 2: Technical QA
-  let techHtml = `<h3>Section 2: Core Technical Assessment (20 Minutes)</h3>`;
+  let techHtml = `<h3>Section 2: Core Technical Assessment (20 Minutes)</h3>
+  <table class="qa-table" style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
+    <thead>
+      <tr style="background-color: #fafafa; border-bottom: 2px solid var(--border-color);">
+        <th style="padding: 12px; text-align: left; width: 5%;">#</th>
+        <th style="padding: 12px; text-align: left; width: 65%;">Question & Expected Answer</th>
+        <th style="padding: 12px; text-align: center; width: 30%;">Panelist Evaluation</th>
+      </tr>
+    </thead>
+    <tbody>
+  `;
+  
+  const groupedQuestions = {};
   setData.questions.forEach((q, index) => {
-    // Dynamic tag for domains
-    const domain = getQuestionDomain(q.question);
-    techHtml += `
-      <div class="qa-block">
-        <div class="qa-question">
-          <span class="qa-number">${index + 1}</span>
-          <span>${q.question}</span>
-        </div>
-        <div style="margin-left: 38px; margin-bottom: 8px; font-size: 0.75rem; font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-transform: uppercase; color: var(--text-muted); font-weight: bold;">
-          Domain Category: ${domain}
-        </div>
-        <div class="qa-answer-box">
-          <div class="qa-answer-label">Expected Answer Summary:</div>
-          <p>${q.answer}</p>
-        </div>
-        <div class="qa-metrics-grid">
-          <div class="qa-metric-item strong">
-            <div class="qa-metric-title">Good Candidate Mention Indicators:</div>
-            <p>${q.good || "Provides clear technical answers with standard architectural terms."}</p>
-          </div>
-          <div class="qa-metric-item strong">
-            <div class="qa-metric-title">Exceptional Candidate Mention Indicators:</div>
-            <p>${q.exceptional || "Provides highly advanced insights, optimization techniques, and concrete trade-offs."}</p>
-          </div>
-          <div class="qa-metric-item weak">
-            <div class="qa-metric-title">Common Mistakes & Red Flags:</div>
-            <p>${q.mistakes || "Lack of practical production execution context or incorrect explanations."}</p>
-          </div>
-        </div>
-        ${q.followUps && q.followUps.length > 0 ? `
-          <div class="qa-followups">
-            <strong>Follow-Up Inquiries:</strong>
-            <ul>
-              ${q.followUps.map(f => `<li>${f}</li>`).join("")}
-            </ul>
-          </div>
-        ` : ""}
-      </div>
-    `;
+    const cat = q.category || getQuestionDomain(q.question);
+    if (!groupedQuestions[cat]) groupedQuestions[cat] = [];
+    groupedQuestions[cat].push({ q, originalIndex: index });
   });
+
+  let displayOrder = 1;
+  Object.keys(groupedQuestions).forEach(cat => {
+    // Insert Section Header
+    techHtml += `
+      <tr style="background-color: #e2e8f0; border-bottom: 2px solid #cbd5e1;">
+        <td colspan="3" style="padding: 10px 12px; font-weight: bold; color: #1e293b; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em;">
+          Section: ${cat}
+        </td>
+      </tr>
+    `;
+    
+    // Insert Questions
+    groupedQuestions[cat].forEach(item => {
+      const q = item.q;
+      const qId = title.toLowerCase().replace(/[^a-z0-9]/g, '') + "-q-" + item.originalIndex;
+      techHtml += `
+        <tr style="border-bottom: 1px solid var(--border-color);">
+          <td style="padding: 16px 12px; vertical-align: top; font-weight: bold;">${displayOrder++}</td>
+          <td style="padding: 16px 12px; vertical-align: top;">
+            <div style="font-weight: 600; margin-bottom: 8px; color: var(--text-primary); font-size: 0.95rem;">${q.question}</div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; background: #fafafa; padding: 8px; border-radius: 4px; border-left: 3px solid var(--text-muted);">
+              <strong>Expected:</strong> ${q.answer}
+            </div>
+          </td>
+          <td style="padding: 16px 12px; vertical-align: middle;">
+            <div style="display: flex; gap: 8px; justify-content: center;" class="qa-validation-group" data-qid="${qId}" data-round="${title}">
+              <button class="qa-btn qa-correct" onclick="window.evaluateQuestion('${title}', '${qId}', 1, this)" style="flex: 1; padding: 8px; border: 1px solid #10b981; background: white; color: #10b981; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem; transition: all 0.2s;">Correct</button>
+              <button class="qa-btn qa-partial" onclick="window.evaluateQuestion('${title}', '${qId}', 0.5, this)" style="flex: 1; padding: 8px; border: 1px solid #f59e0b; background: white; color: #f59e0b; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem; transition: all 0.2s;">Partial</button>
+              <button class="qa-btn qa-incorrect" onclick="window.evaluateQuestion('${title}', '${qId}', 0, this)" style="flex: 1; padding: 8px; border: 1px solid #ef4444; background: white; color: #ef4444; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.75rem; transition: all 0.2s;">Incorrect</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+  });
+  
+  techHtml += `</tbody></table>`;
 
   // Render Section 3: Architecture
   let archHtml = `<h3>Section 3: System Design / Architecture (20 Minutes)</h3>`;
@@ -1129,12 +1118,10 @@ function renderSetTab(setData, title) {
       `;
     });
   }
-
   return `
     <div class="report-section">
       <div class="report-header">
         <h2>${title}</h2>
-        <div class="meta-info">Total Duration: 60 Minutes</div>
       </div>
       ${introHtml}
       ${techHtml}
@@ -1143,6 +1130,61 @@ function renderSetTab(setData, title) {
     </div>
   `;
 }
+
+// Global QA Scoring Logic connected to the QA Tables
+window.qaScores = {};
+window.evaluateQuestion = function(roundTitle, qId, scoreValue, btnElem) {
+  if (!window.qaScores[roundTitle]) window.qaScores[roundTitle] = {};
+  window.qaScores[roundTitle][qId] = scoreValue;
+  
+  // Update button UI
+  const group = btnElem.parentElement;
+  const buttons = group.querySelectorAll('.qa-btn');
+  buttons.forEach(b => {
+    b.style.color = b.style.borderColor;
+    b.style.background = 'white';
+  });
+  btnElem.style.background = btnElem.style.borderColor;
+  btnElem.style.color = 'white';
+  
+  // Calculate round percentage
+  const roundScores = Object.values(window.qaScores[roundTitle]);
+  const totalQuestions = document.querySelectorAll('.qa-validation-group[data-round="' + roundTitle + '"]').length;
+  const earned = roundScores.reduce((a, b) => a + b, 0);
+  const percentage = Math.round((earned / totalQuestions) * 100);
+  
+  // Auto-sync with scorecard
+  let roundKey = null;
+  const tLower = roundTitle.toLowerCase();
+  if (tLower.includes("standard")) roundKey = "tech1";
+  else if (tLower.includes("advanced")) roundKey = "tech2";
+  else if (tLower.includes("expert") || tLower.includes("managerial")) roundKey = "managerial";
+  else if (tLower.includes("tech") && tLower.includes("1")) roundKey = "tech1";
+  else if (tLower.includes("tech") && tLower.includes("2")) roundKey = "tech2";
+  
+  if (roundKey && scorecardState.rounds[roundKey]) {
+     scorecardState.rounds[roundKey].score = percentage;
+     if (percentage >= 70) scorecardState.rounds[roundKey].status = "Select";
+     else if (percentage >= 50) scorecardState.rounds[roundKey].status = "Hold";
+     else scorecardState.rounds[roundKey].status = "Reject";
+     
+     // Update DOM inputs dynamically if active
+     const scoreInput = document.getElementById('score-' + roundKey);
+     if (scoreInput) scoreInput.value = percentage;
+     
+     const btnSelect = document.querySelector('#round-panel-' + roundKey + ' .select-btn');
+     const btnHold = document.querySelector('#round-panel-' + roundKey + ' .hold-btn');
+     const btnReject = document.querySelector('#round-panel-' + roundKey + ' .reject-btn');
+     if (btnSelect && btnHold && btnReject) {
+       btnSelect.classList.remove('active');
+       btnHold.classList.remove('active');
+       btnReject.classList.remove('active');
+       if (percentage >= 70) btnSelect.classList.add('active');
+       else if (percentage >= 50) btnHold.classList.add('active');
+       else btnReject.classList.add('active');
+     }
+  }
+};
 
 function renderExportTab() {
   const defaultSec = lastActiveTab !== "export" ? lastActiveTab : "all";
@@ -1655,6 +1697,11 @@ function renderScorecardHTML() {
         <input type="text" id="scorecard-candidate-name" value="${candidateName}" placeholder="Enter candidate name to link scorecard..." style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.95rem; font-family: inherit;" onchange="handleScorecardNameChange(this.value)">
       </div>
       
+      <div style="margin-bottom: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
+        <label style="font-weight: bold; display: block; margin-bottom: 6px; color: var(--text-headers);">Interview Date:</label>
+        <input type="date" id="scorecard-interview-date" value="${scorecardState.interviewDate || new Date().toISOString().split('T')[0]}" style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.95rem; font-family: inherit;" onchange="handleScorecardDateChange(this.value)">
+      </div>
+      
       <p style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px;">
         Grade the candidate through Technical Round 1, Technical Round 2, and the Managerial Round. Save each round to sync with the database.
       </p>
@@ -1851,6 +1898,10 @@ window.handleScorecardNameChange = function(newName) {
     alert("Candidate name cannot be empty.");
     return;
   }
+  
+window.handleScorecardDateChange = function(newDate) {
+  scorecardState.interviewDate = newDate;
+};
   
   if (currentKit) {
     if (!currentKit.candidateInsight) {
@@ -2128,6 +2179,7 @@ function saveCandidateAssessmentToDB(callback) {
     roleName: currentKit.roleName,
     track: currentKit.candidateInsight ? currentKit.candidateInsight.track : "intermediate",
     date: new Date().toISOString(),
+    interviewDate: scorecardState.interviewDate || new Date().toISOString().split('T')[0],
     rounds: scorecardState.rounds,
     finalDecision: scorecardState.finalDecision,
     finalComments: scorecardState.finalComments,
@@ -2460,8 +2512,12 @@ window.renderHistoryDashboard = async function() {
       const isCandRejected = isRejected(item);
       const decText = isCandRejected ? "Reject" : (item.finalDecision || "Pending");
       
+      const interviewDateFormatted = item.interviewDate ? new Date(item.interviewDate).toLocaleDateString() : new Date(item.date).toLocaleDateString();
+      
       interviewRows += `
         <tr>
+          <td style="text-align: center;"><input type="checkbox" class="bulk-select-cb" value="${item.id}"></td>
+          <td style="font-weight: 500; color: var(--text-muted);">${interviewDateFormatted}</td>
           <td class="name-cell" style="font-weight: bold; color: var(--text-headers);" title="${item.candidateName}">${item.candidateName}</td>
           <td class="role-cell" title="${item.roleName}">${item.roleName}</td>
           <td><span class="status-badge ${t1.toLowerCase()}">${t1}</span></td>
@@ -2493,6 +2549,7 @@ window.renderHistoryDashboard = async function() {
       const date = new Date(item.date).toLocaleDateString() + " " + new Date(item.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
       screeningRows += `
         <tr>
+          <td style="text-align: center;"><input type="checkbox" class="bulk-select-screening-cb" value="${item.id}"></td>
           <td style="font-weight: bold; color: var(--text-headers);">${date}</td>
           <td class="role-cell" title="${item.roleName}">${item.roleName}</td>
           <td>${item.totalProcessed} CVs</td>
@@ -2550,44 +2607,90 @@ window.renderHistoryDashboard = async function() {
     </div>`;
   }
 
+  // Compute metrics for filtered analytics chart
+  let f_selected = 0;
+  let f_rejected = 0;
+  let f_pending = 0;
+  filteredInterviews.forEach(item => {
+    const isCandRejected = item.finalDecision === "Reject" || 
+             (item.rounds && item.rounds.tech1 && item.rounds.tech1.status === "Reject") || 
+             (item.rounds && item.rounds.tech2 && item.rounds.tech2.status === "Reject") || 
+             (item.rounds && item.rounds.managerial && item.rounds.managerial.status === "Reject");
+    if (isCandRejected) f_rejected++;
+    else if (item.finalDecision === "Select") f_selected++;
+    else f_pending++;
+  });
+  const f_total = filteredInterviews.length;
+  const f_selPct = f_total > 0 ? Math.round((f_selected / f_total) * 100) : 0;
+  const f_rejPct = f_total > 0 ? Math.round((f_rejected / f_total) * 100) : 0;
+  const f_penPct = f_total > 0 ? Math.round((f_pending / f_total) * 100) : 0;
+
   historyPane.innerHTML = `
-    <!-- Excel & PDF Export controls -->
-    <div class="history-controls-row no-print" style="display: flex; gap: 12px; margin-bottom: 20px; justify-content: flex-end; align-items: center;">
-      <button class="btn-primary" onclick="exportInterviewsCSV()" style="width: auto; margin: 0; padding: 10px 20px; font-size: 0.85rem; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">Export to Excel (CSV)</button>
-      <button class="btn-secondary" onclick="window.print()" style="width: auto; margin: 0; padding: 10px 20px; font-size: 0.85rem; border-color: var(--text-headers); color: var(--text-headers); font-family: -apple-system, BlinkMacSystemFont, sans-serif;">Print Dashboard (PDF)</button>
+    <div class="history-filters-bar no-print" style="display: flex; justify-content: space-between; align-items: flex-end;">
+      <div style="display: flex; gap: 12px; align-items: flex-end;">
+        <div class="history-filter-item">
+          <label for="history-from-date">From Date:</label>
+          <input type="date" id="history-from-date" class="history-filter-input" value="${historyFilterFrom || ''}">
+        </div>
+        <div class="history-filter-item">
+          <label for="history-to-date">To Date:</label>
+          <input type="date" id="history-to-date" class="history-filter-input" value="${historyFilterTo || ''}">
+        </div>
+        <button class="btn-secondary" onclick="resetHistoryFilters()" style="padding: 6px 12px; font-size: 0.8rem; margin: 0; height: 38px; width: auto; border-color: var(--text-headers); color: var(--text-headers); font-family: -apple-system, BlinkMacSystemFont, sans-serif;">Reset Filters</button>
+      </div>
+      <button class="btn-secondary" onclick="window.print()" style="padding: 6px 16px; font-size: 0.85rem; margin: 0; height: 38px; width: auto; border-color: var(--text-headers); color: var(--text-headers); font-family: -apple-system, BlinkMacSystemFont, sans-serif; display: flex; align-items: center; gap: 6px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        Print Dashboard
+      </button>
     </div>
 
-    <!-- Date range filters bar -->
-    <div class="history-filters-bar no-print">
-      <div class="history-filter-item">
-        <label for="history-from-date">From Date:</label>
-        <input type="date" id="history-from-date" class="history-filter-input" value="${historyFilterFrom || ''}">
+    <!-- Compact Side-by-Side Analytics Dashboard -->
+    <div style="display: grid; grid-template-columns: 2fr 1.2fr; gap: 24px; margin-bottom: 30px;">
+      
+      <!-- Left: Stat Cards -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="stat-card" style="margin: 0;">
+          <h4 style="margin: 0 0 8px 0; font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Total Evaluated</h4>
+          <div class="stat-value" style="font-size: 1.8rem;">${totalInterviews}</div>
+        </div>
+        <div class="stat-card selected" style="margin: 0;">
+          <h4 style="margin: 0 0 8px 0; font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Selected</h4>
+          <div class="stat-value" style="font-size: 1.8rem; color: #10b981;">${selectedInterviews}</div>
+        </div>
+        <div class="stat-card pending-hold" style="margin: 0;">
+          <h4 style="margin: 0 0 8px 0; font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Pending / Hold</h4>
+          <div class="stat-value" style="font-size: 1.8rem; color: #f59e0b;">${holdPendingInterviews}</div>
+        </div>
+        <div class="stat-card rejected" style="margin: 0;">
+          <h4 style="margin: 0 0 8px 0; font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Rejected</h4>
+          <div class="stat-value" style="font-size: 1.8rem; color: #ef4444;">${rejectedInterviews}</div>
+        </div>
       </div>
-      <div class="history-filter-item">
-        <label for="history-to-date">To Date:</label>
-        <input type="date" id="history-to-date" class="history-filter-input" value="${historyFilterTo || ''}">
-      </div>
-      <button class="btn-secondary" onclick="resetHistoryFilters()" style="padding: 6px 12px; font-size: 0.8rem; margin: 0; height: auto; width: auto; border-color: var(--text-headers); color: var(--text-headers); font-family: -apple-system, BlinkMacSystemFont, sans-serif;">Reset Filters</button>
-    </div>
 
-    <!-- Evaluation Statistics Summary Cards -->
-    <div class="history-stats-grid">
-      <div class="stat-card">
-        <h4>Total Evaluated</h4>
-        <div class="stat-value">${totalInterviews}</div>
+      <!-- Right: Interactive Pie Chart (Filtered) -->
+      ${f_total > 0 ? `
+      <div style="background: white; padding: 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; gap: 30px;" class="no-print">
+        
+        <!-- CSS Conic Gradient Pie Chart -->
+        <div style="width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(
+          #10b981 0% ${f_selPct}%, 
+          #f59e0b ${f_selPct}% ${f_selPct + f_penPct}%, 
+          #ef4444 ${f_selPct + f_penPct}% 100%
+        ); box-shadow: inset 0 2px 4px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.1);"></div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem; color: var(--text-muted);">
+          <div style="font-weight: bold; color: var(--text-headers); font-size: 0.95rem; margin-bottom: 2px;">Filtered Yield</div>
+          <span style="display: flex; align-items: center; gap: 8px;"><span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #10b981;"></span> <strong>${f_selPct}%</strong> Select</span>
+          <span style="display: flex; align-items: center; gap: 8px;"><span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #f59e0b;"></span> <strong>${f_penPct}%</strong> Pending</span>
+          <span style="display: flex; align-items: center; gap: 8px;"><span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #ef4444;"></span> <strong>${f_rejPct}%</strong> Reject</span>
+        </div>
+
       </div>
-      <div class="stat-card selected">
-        <h4>Selected</h4>
-        <div class="stat-value" style="color: #047857;">${selectedInterviews}</div>
+      ` : `
+      <div style="background: #f9fafb; border-radius: var(--radius-md); border: 1px dashed var(--border-color); display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.9rem;" class="no-print">
+        No records in selected date range
       </div>
-      <div class="stat-card rejected">
-        <h4>Rejected</h4>
-        <div class="stat-value" style="color: #ef4444;">${rejectedInterviews}</div>
-      </div>
-      <div class="stat-card pending-hold">
-        <h4>Hold / Pending</h4>
-        <div class="stat-value" style="color: #f59e0b;">${holdPendingInterviews}</div>
-      </div>
+      `}
     </div>
 
     <div class="history-card-list">
@@ -2597,13 +2700,15 @@ window.renderHistoryDashboard = async function() {
           <table class="screening-table">
             <thead>
               <tr>
-                <th style="width: 18%;">Candidate Name</th>
-                <th style="width: 20%;">Target Position</th>
-                <th style="width: 9%;">Tech 1</th>
-                <th style="width: 9%;">Tech 2</th>
-                <th style="width: 9%;">Managerial</th>
-                <th style="width: 12%;">Final Status</th>
-                <th style="width: 23%; text-align: right;" class="no-print">Actions</th>
+                <th style="width: 4%; text-align: center;"><input type="checkbox" onclick="toggleBulkSelectAll(this)"></th>
+                <th style="width: 10%;">Interview Date</th>
+                <th style="width: 16%;">Candidate Name</th>
+                <th style="width: 14%;">Target Position</th>
+                <th style="width: 10%;">Tech 1</th>
+                <th style="width: 10%;">Tech 2</th>
+                <th style="width: 11%;">Managerial</th>
+                <th style="width: 11%;">Final Status</th>
+                <th style="width: 14%; text-align: right;" class="no-print">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -2612,6 +2717,11 @@ window.renderHistoryDashboard = async function() {
           </table>
         </div>
         ${paginationHtml}
+        
+        <div class="no-print" style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+          <button class="btn-secondary" onclick="deleteBulkHistoryAssessments()" style="color: #ef4444; border-color: #fca5a5; padding: 8px 16px; font-size: 0.85rem; margin: 0; width: auto;">Delete Selected</button>
+          <button class="btn-primary" onclick="exportInterviewsCSV()" style="width: auto; margin: 0; padding: 8px 16px; font-size: 0.85rem; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">Export Tracker to Excel</button>
+        </div>
       </div>
 
       <div style="margin-top: 20px;">
@@ -2620,8 +2730,9 @@ window.renderHistoryDashboard = async function() {
           <table class="screening-table">
             <thead>
               <tr>
-                <th style="width: 18%;">Run Date / Time</th>
-                <th style="width: 22%;">Target Role</th>
+                <th style="width: 4%; text-align: center;"><input type="checkbox" onclick="toggleBulkSelectAllScreenings(this)"></th>
+                <th style="width: 16%;">Run Date / Time</th>
+                <th style="width: 20%;">Target Role</th>
                 <th style="width: 14%;">CVs Processed</th>
                 <th style="width: 14%;">Shortlisted</th>
                 <th style="width: 10%;">Yield %</th>
@@ -2633,7 +2744,11 @@ window.renderHistoryDashboard = async function() {
             </tbody>
           </table>
         </div>
+        <div class="no-print" style="margin-top: 15px; display: flex; justify-content: flex-start;">
+          <button class="btn-secondary" onclick="deleteBulkScreenings()" style="color: #ef4444; border-color: #fca5a5; padding: 8px 16px; font-size: 0.85rem;">Delete Selected</button>
+        </div>
       </div>
+      
     </div>
   `;
 
@@ -2667,6 +2782,94 @@ window.resetHistoryFilters = function() {
   historyCurrentPage = 1;
   window.renderHistoryDashboard();
 };
+
+window.toggleBulkSelectAll = function(cb) {
+  const checkboxes = document.querySelectorAll('.bulk-select-cb');
+  checkboxes.forEach(c => c.checked = cb.checked);
+};
+
+window.deleteBulkHistoryAssessments = function() {
+  const checkboxes = document.querySelectorAll('.bulk-select-cb:checked');
+  if (checkboxes.length === 0) {
+    alert("Please select at least one report to delete.");
+    return;
+  }
+  if (!confirm(`Are you sure you want to delete ${checkboxes.length} selected report(s)?`)) return;
+  
+  const idsToDelete = Array.from(checkboxes).map(cb => cb.value);
+  
+  if (useFirestore && db) {
+    const batch = db.batch();
+    idsToDelete.forEach(id => {
+      const ref = db.collection("interviews").doc(id);
+      batch.delete(ref);
+    });
+    batch.commit().then(() => {
+      alert("Selected reports deleted successfully.");
+      window.renderHistoryDashboard();
+    }).catch(err => {
+      console.error("Bulk delete failed:", err);
+      deleteBulkLocalStorage(idsToDelete);
+    });
+  } else {
+    deleteBulkLocalStorage(idsToDelete);
+  }
+};
+
+function deleteBulkLocalStorage(ids) {
+  const saved = localStorage.getItem("TECH_EVAL_INTERVIEWS");
+  if (saved) {
+    let interviews = JSON.parse(saved);
+    interviews = interviews.filter(i => !ids.includes(i.id));
+    localStorage.setItem("TECH_EVAL_INTERVIEWS", JSON.stringify(interviews));
+    alert("Selected reports deleted successfully.");
+    window.renderHistoryDashboard();
+  }
+}
+
+window.toggleBulkSelectAllScreenings = function(cb) {
+  const checkboxes = document.querySelectorAll('.bulk-select-screening-cb');
+  checkboxes.forEach(c => c.checked = cb.checked);
+};
+
+window.deleteBulkScreenings = function() {
+  const checkboxes = document.querySelectorAll('.bulk-select-screening-cb:checked');
+  if (checkboxes.length === 0) {
+    alert("Please select at least one screening run to delete.");
+    return;
+  }
+  if (!confirm(`Are you sure you want to delete ${checkboxes.length} selected screening run(s)?`)) return;
+  
+  const idsToDelete = Array.from(checkboxes).map(cb => cb.value);
+  
+  if (useFirestore && db) {
+    const batch = db.batch();
+    idsToDelete.forEach(id => {
+      const ref = db.collection("screenings").doc(id);
+      batch.delete(ref);
+    });
+    batch.commit().then(() => {
+      alert("Selected screening runs deleted successfully.");
+      window.renderHistoryDashboard();
+    }).catch(err => {
+      console.error("Bulk delete failed:", err);
+      deleteBulkScreeningsLocalStorage(idsToDelete);
+    });
+  } else {
+    deleteBulkScreeningsLocalStorage(idsToDelete);
+  }
+};
+
+function deleteBulkScreeningsLocalStorage(ids) {
+  const saved = localStorage.getItem("TECH_EVAL_SCREENINGS");
+  if (saved) {
+    let screenings = JSON.parse(saved);
+    screenings = screenings.filter(i => !ids.includes(i.id));
+    localStorage.setItem("TECH_EVAL_SCREENINGS", JSON.stringify(screenings));
+    alert("Selected screening runs deleted successfully.");
+    window.renderHistoryDashboard();
+  }
+}
 
 window.exportInterviewsCSV = function() {
   const interviews = window.historyInterviewsList || [];
@@ -2831,21 +3034,49 @@ function deleteScreeningFromLocalStorage(docId) {
 
 // Skill vocabulary database for extraction
 const SKILL_KEYWORDS = [
-  // Languages & Core
-  "Java", "Spring Boot", "Spring Cloud", "Hibernate", "JPA", "Angular", "TypeScript", "RxJS", "NgRx", "Signals", "JavaScript", "HTML", "CSS", "Python", "Go", "Golang", "C++", "Scala",
-  // Databases & Storage
-  "PostgreSQL", "SQL", "MySQL", "Oracle", "MongoDB", "Cassandra", "Redis", "Elasticsearch", "Neo4j", "HNSW", "IVF", "Vector database", "pgvector", "Qdrant", "Pinecone", "Milvus",
-  // Messaging & Tooling
-  "Kafka", "RabbitMQ", "gRPC", "REST API", "RESTful", "GraphQL", "WebClient", "Spring AI", "LangChain", "LangGraph", "LlamaIndex",
-  // Architecture & Patterns
-  "Microservices", "Design Patterns", "SOLID", "OOP", "MVC", "Event-driven", "CQRS", "DDD", "Domain-Driven Design",
-  // Cloud & DevOps
-  "AWS", "ECS", "EKS", "S3", "RDS", "EC2", "Docker", "Kubernetes", "K8s", "Terraform", "CI/CD", "Maven", "Gradle", "Git",
-  // AI Architecture & MLOps
-  "Generative AI", "LLM", "RAG", "Prompt Engineering", "Fine-tuning", "Embeddings", "Agentic Workflows", "Multi-agent", "Triton", "vLLM", "Ollama", "Hugging Face", "Arize", "TruLens", "Phoenix", "Observability", "Telemetry", "MLOps",
-  // Governance & Compliance
-  "EU AI Act", "GDPR", "HIPAA", "Sovereignty", "AI safety", "NeMo Guardrails", "Llama Guard", "PII"
+  // Primary Core Skills (Highest Priority)
+  "Java", "Spring Boot", "Microservices", "Python", "Go", "Golang", "Angular", "React", "Kafka", "PostgreSQL", "AWS", "Kubernetes", "Generative AI", "LLM", "RAG",
+  // Secondary Critical Skills
+  "Spring Cloud", "Hibernate", "TypeScript", "SQL", "MySQL", "MongoDB", "Redis", "Elasticsearch", "Vector database", "Docker", "CI/CD",
+  // Tertiary / Supporting Skills
+  "JPA", "RxJS", "NgRx", "Signals", "JavaScript", "HTML", "CSS", "C++", "Scala", "Oracle", "Cassandra", "Neo4j", "HNSW", "IVF", "pgvector", "Qdrant", "Pinecone", "Milvus", "RabbitMQ", "gRPC", "REST API", "RESTful", "GraphQL", "WebClient", "Spring AI", "LangChain", "LangGraph", "LlamaIndex", "Design Patterns", "SOLID", "OOP", "MVC", "Event-driven", "CQRS", "DDD", "Domain-Driven Design", "ECS", "EKS", "S3", "RDS", "EC2", "K8s", "Terraform", "Maven", "Gradle", "Git", "Prompt Engineering", "Fine-tuning", "Embeddings", "Agentic Workflows", "Multi-agent", "Triton", "vLLM", "Ollama", "Hugging Face", "Arize", "TruLens", "Phoenix", "Observability", "Telemetry", "MLOps", "EU AI Act", "GDPR", "HIPAA", "Sovereignty", "AI safety", "NeMo Guardrails", "Llama Guard", "PII"
 ];
+
+// Semantic groupings for the Match Summary and Question generation
+const SKILL_CATEGORIES = {
+  "Programming Languages": ["Java", "Python", "Go", "Golang", "C++", "Scala", "TypeScript", "JavaScript"],
+  "Backend Frameworks": ["Spring Boot", "Spring Cloud", "NodeJS"],
+  "Frontend Frameworks": ["Angular", "React", "HTML", "CSS"],
+  "Generative AI & LLMs": ["Generative AI", "LLM", "RAG", "Prompt Engineering", "Fine-tuning", "Embeddings", "Agentic Workflows", "Multi-agent", "LangChain", "LangGraph", "LlamaIndex", "Spring AI"],
+  "Cloud Platforms": ["AWS", "GCP", "Azure", "ECS", "EC2", "S3"],
+  "Containerization & Orchestration": ["Docker", "Kubernetes", "K8s", "EKS"],
+  "Relational Databases": ["PostgreSQL", "SQL", "MySQL", "Oracle"],
+  "NoSQL & Caching": ["MongoDB", "Cassandra", "Redis", "Elasticsearch"],
+  "Vector Databases": ["Vector database", "Milvus", "Pinecone", "Qdrant", "pgvector", "HNSW", "IVF"],
+  "Message Brokers & Event-Driven": ["Kafka", "RabbitMQ", "Event-driven", "Microservices"],
+  "API & Integration": ["REST API", "RESTful", "GraphQL", "gRPC", "WebClient"],
+  "Observability & DevOps": ["Telemetry", "Observability", "CI/CD", "Terraform", "Git", "MLOps", "Maven", "Gradle"],
+  "Architecture & Design": ["Design Patterns", "SOLID", "OOP", "MVC", "CQRS", "DDD", "Domain-Driven Design"],
+  "AI Governance": ["EU AI Act", "GDPR", "HIPAA", "Sovereignty", "AI safety", "NeMo Guardrails", "Llama Guard", "PII", "TruLens", "Phoenix", "Arize"]
+};
+
+// Alias mapping for semantic matching
+const SKILL_ALIASES = {
+  "vector database": ["vector search", "milvus", "qdrant", "pinecone", "weaviate", "pgvector", "hnsw", "ivf"],
+  "rag": ["retrieval augmented generation", "retrieval-augmented generation"],
+  "llm": ["large language model", "gpt", "claude", "llama", "generative ai"],
+  "angular": ["angularjs", "angular 14", "angular 15", "angular 16", "angular 17"],
+  "react": ["reactjs", "react.js", "react native"],
+  "nodejs": ["node", "node.js"],
+  "postgresql": ["postgres", "postgres db", "postgresql"],
+  "kubernetes": ["k8s", "eks", "gke", "k3s"],
+  "aws": ["amazon web services", "ec2", "s3", "ecs", "rds"],
+  "gcp": ["google cloud platform", "google cloud"],
+  "azure": ["microsoft azure"],
+  "microservices": ["micro-services", "distributed systems", "service-oriented architecture"],
+  "event-driven": ["event driven", "event-driven architecture", "eda"],
+  "kafka": ["apache kafka", "confluent kafka"]
+};
 
 // Helper to extract keywords from text
 function extractSkills(text) {
@@ -2893,6 +3124,15 @@ function parseJDSeniority(jdText) {
   return res;
 }
 
+function cleanCandidateName(rawName) {
+  if (!rawName) return "";
+  return rawName.replace(/(?:\b|\||-)(naukri|linkedin|github|lead|senior|sr|jr|junior|principal|architect|developer|engineer|manager|director|full\s*stack|backend|frontend|ai|ml|data|scientist|consultant|expert|specialist|devops|qa|tester|programmer|analyst|software|tech|technical|web)\b/gi, ' ')
+                .replace(/[\|\-\(\),:\._]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .replace(/\b\w/g, c => c.toUpperCase());
+}
+
 // Local dynamic CV-aware generator helpers (Seniority & Core Domain customizer)
 function parseCV(cvText) {
   const cvData = {
@@ -2908,16 +3148,17 @@ function parseCV(cvText) {
 
   // Extract Name (look for "Name: John Doe" or first line)
   const nameMatch = cvText.match(/(?:name|candidate|applicant):\s*([^\n\r]+)/i);
+  let rawName = "";
   if (nameMatch && nameMatch[1].trim().length <= 50) {
-    cvData.name = nameMatch[1].trim();
+    rawName = nameMatch[1].trim();
   } else {
     const lines = cvText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     if (lines.length > 0 && lines[0].length <= 50 && !lines[0].toLowerCase().includes('cv') && !lines[0].toLowerCase().includes('resume')) {
-      cvData.name = lines[0];
-    } else {
-      cvData.name = ""; // Trigger fallback to clean filename
+      rawName = lines[0];
     }
   }
+  
+  cvData.name = cleanCandidateName(rawName);
 
   // Extract experience years
   let years = 0;
@@ -2987,19 +3228,24 @@ function parseCV(cvText) {
   cvData.seniority = seniority;
 
   // Extract Companies
-  const companyRegex = /(?:at|for)\s+([A-Z][A-Za-z0-9\s]{2,15})(?:\s+Solutions|\s+Corp|\s+Systems|\s+Group|\s+Technologies|\s+Inc|\s+\(|,)/g;
+  const explicitRegex = /(?:company|employer|organization):\s*([A-Za-z0-9\s&]+)(?:\n|\r|$)/gi;
   let match;
-  while ((match = companyRegex.exec(cvText)) !== null) {
-    if (match[1]) {
-      const companyName = match[1].trim();
-      if (!cvData.companies.includes(companyName) && !["The", "A", "Company", "Experience", "Summary", "Role", "Present", "June", "July", "August"].includes(companyName)) {
-        cvData.companies.push(companyName);
-      }
+  while ((match = explicitRegex.exec(cvText)) !== null) {
+    if (match[1] && match[1].trim().length > 2) {
+      cvData.companies.push(match[1].trim());
     }
   }
   
   if (cvData.companies.length === 0) {
-    cvData.companies = ["TechCorp", "Innovate Solutions"];
+    const fallbackRegex = /(?:at|for|joined)\s+([A-Z][A-Za-z0-9\s&]{2,18})(?:\s+Solutions|\s+Corp|\s+Systems|\s+Group|\s+Technologies|\s+Inc|\s+\(|,)/g;
+    while ((match = fallbackRegex.exec(cvText)) !== null) {
+      if (match[1]) {
+        const companyName = match[1].trim();
+        if (!cvData.companies.includes(companyName) && !["The", "A", "Company", "Experience", "Summary", "Role", "Present", "June", "July", "August"].includes(companyName)) {
+          cvData.companies.push(companyName);
+        }
+      }
+    }
   }
 
   // Extract Technologies
@@ -3010,9 +3256,17 @@ function parseCV(cvText) {
 
 // JD-CV matching score calculator
 function calculateMatchMetrics(cvData, jdSkills, jdYears, jdLevel) {
-  // Overlap of JD required skills in candidate's CV
-  const matchedSkills = jdSkills.filter(s => cvData.tech.some(c => c.toLowerCase() === s.toLowerCase()));
-  const missingSkills = jdSkills.filter(s => !cvData.tech.some(c => c.toLowerCase() === s.toLowerCase()));
+  // Overlap of JD required skills in candidate's CV using semantic aliases
+  const matchedSkills = jdSkills.filter(s => {
+    const mainSkill = s.toLowerCase();
+    const aliases = SKILL_ALIASES[mainSkill] || [];
+    return cvData.tech.some(c => {
+      const cvSkill = c.toLowerCase();
+      return cvSkill === mainSkill || aliases.includes(cvSkill) || cvSkill.includes(mainSkill) || mainSkill.includes(cvSkill);
+    });
+  });
+  
+  const missingSkills = jdSkills.filter(s => !matchedSkills.includes(s));
   
   let skillMatchPct = jdSkills.length > 0 ? (matchedSkills.length / jdSkills.length) * 100 : 80;
   
@@ -3075,11 +3329,34 @@ function calculateMatchMetrics(cvData, jdSkills, jdYears, jdLevel) {
   if (overallScore >= 80) verdict = "strong";
   else if (overallScore >= 55) verdict = "potential";
   
+  // Group skill gaps
+  const groupedGaps = [];
+  for (const [category, groupSkills] of Object.entries(SKILL_CATEGORIES)) {
+    const requiredInGroup = jdSkills.filter(s => groupSkills.includes(s));
+    if (requiredInGroup.length > 0) {
+      const matchedInGroup = matchedSkills.filter(s => groupSkills.includes(s));
+      if (matchedInGroup.length > 0) {
+        groupedGaps.push({
+          category: category,
+          status: "match",
+          notes: `JD requested: ${requiredInGroup.join(", ")}. Confirmed in CV: ${matchedInGroup.join(", ")}.`
+        });
+      } else {
+        groupedGaps.push({
+          category: category,
+          status: "risk",
+          notes: `JD requested: ${requiredInGroup.join(", ")}. Not found in CV.`
+        });
+      }
+    }
+  }
+  
   return {
     score: overallScore,
     verdict: verdict,
     matchedSkills: matchedSkills,
-    missingSkills: missingSkills
+    missingSkills: missingSkills,
+    groupedGaps: groupedGaps
   };
 }
 
@@ -3139,11 +3416,12 @@ function scaleUpAnswerText(text) {
 function generateDynamicKit(baseKit, cvData, jdVal) {
   const kit = JSON.parse(JSON.stringify(baseKit));
   
-  const company = cvData.companies[0] || "TechCorp";
-  const firstTech = cvData.tech[0] || "Java";
+  const company = cvData.companies.length > 0 ? cvData.companies[0] : "Previous Employer";
+  const firstTech = cvData.tech.length > 0 ? cvData.tech[0] : "Core Stack";
   
-  // Extract JD details
-  const jdSkills = extractSkills(jdVal);
+  // Extract JD details - Limit to Top 4 Critical Skills for focused QA
+  const allJdSkills = extractSkills(jdVal);
+  const jdSkills = allJdSkills.slice(0, 4);
   const jdSeniority = parseJDSeniority(jdVal);
   
   // Compute match metrics
@@ -3212,6 +3490,8 @@ function generateDynamicKit(baseKit, cvData, jdVal) {
     "ai-architect": [20, 20, 20]
   }[roleKey];
 
+  const globalSelected = [];
+
   // Pick questions sequentially to guarantee coverage
   function buildSetQuestions(count, targetSeniority) {
     const selected = [];
@@ -3219,30 +3499,54 @@ function generateDynamicKit(baseKit, cvData, jdVal) {
     let domainIdx = 0;
 
     while (selected.length < count) {
-      const currentDomain = domainOrder[domainIdx % domains.length];
-      const pool = domainGroups[currentDomain];
+      // Prioritize questions containing the Top JD Skills
+      let candidateQ = null;
+      let shuffledPool = shuffleArray(allQuestionsPool);
       
-      if (pool && pool.length > 0) {
-        const shuffledPool = shuffleArray(pool);
-        const item = shuffledPool.find(x => !selected.some(s => s.question === x.question));
-        if (item) {
-          selected.push(JSON.parse(JSON.stringify(item)));
-        } else {
-          const fallbackPool = allQuestionsPool.filter(x => !selected.some(s => s.question === x.question));
-          if (fallbackPool.length > 0) {
-            selected.push(JSON.parse(JSON.stringify(shuffleArray(fallbackPool)[0])));
-          } else {
-            selected.push(JSON.parse(JSON.stringify(allQuestionsPool[Math.floor(Math.random() * allQuestionsPool.length)])));
+      // 1. Cycle through required skill categories to ensure diverse coverage
+      const requiredCategories = match.groupedGaps.map(g => g.category);
+      if (requiredCategories.length > 0) {
+        const targetCategory = requiredCategories[selected.length % requiredCategories.length];
+        const categorySkills = SKILL_CATEGORIES[targetCategory] || [];
+        
+        for (const skill of categorySkills) {
+          const lowerSkill = skill.toLowerCase();
+          const aliases = SKILL_ALIASES[lowerSkill] || [];
+          const matchedQ = shuffledPool.find(q => !globalSelected.some(s => s.question === q.question) && 
+              (q.question.toLowerCase().includes(lowerSkill) || aliases.some(a => q.question.toLowerCase().includes(a))));
+          if (matchedQ) {
+            candidateQ = matchedQ;
+            candidateQ.category = targetCategory;
+            break;
           }
         }
-      } else {
-        const fallbackPool = allQuestionsPool.filter(x => !selected.some(s => s.question === x.question));
-        if (fallbackPool.length > 0) {
-          selected.push(JSON.parse(JSON.stringify(shuffleArray(fallbackPool)[0])));
-        } else {
-          selected.push(JSON.parse(JSON.stringify(allQuestionsPool[Math.floor(Math.random() * allQuestionsPool.length)])));
-        }
       }
+      
+      // 2. Fallback to domain-based selection
+      if (!candidateQ) {
+        const currentDomain = domainOrder[domainIdx % domains.length];
+        const pool = domainGroups[currentDomain] || [];
+        candidateQ = shuffleArray(pool).find(q => !globalSelected.some(s => s.question === q.question));
+        if (candidateQ) candidateQ.category = currentDomain;
+      }
+      
+      // 3. Absolute fallback
+      if (!candidateQ) {
+        candidateQ = shuffledPool.find(q => !globalSelected.some(s => s.question === q.question));
+        if (candidateQ) candidateQ.category = "General Technical";
+      }
+      
+      if (candidateQ) {
+        const clonedQ = JSON.parse(JSON.stringify(candidateQ));
+        selected.push(clonedQ);
+        globalSelected.push(clonedQ);
+      } else {
+        // If we really run out, just duplicate a random one to prevent crash
+        const clonedFallback = JSON.parse(JSON.stringify(shuffledPool[0]));
+        clonedFallback.category = "General Technical";
+        selected.push(clonedFallback);
+      }
+      
       domainIdx++;
     }
 
@@ -3264,14 +3568,14 @@ function generateDynamicKit(baseKit, cvData, jdVal) {
       const shouldWeave = idx < Math.ceil(count * 0.4);
       if (shouldWeave) {
         let matchedTech = cvData.tech.find(t => q.question.toLowerCase().includes(t.toLowerCase())) || cvData.tech[Math.floor(Math.random() * cvData.tech.length)] || firstTech;
-        const randomCompany = cvData.companies[Math.floor(Math.random() * cvData.companies.length)] || company;
         
         const prefixes = [
-          `I see from your CV that you worked with **${matchedTech}** at **${randomCompany}**. `,
-          `Reflecting on your projects at **${randomCompany}** using **${matchedTech}**, `,
-          `Given your hands-on implementation of **${matchedTech}** at **${randomCompany}**, `,
-          `Regarding your experience at **${randomCompany}** with **${matchedTech}**: `
+          `I see from your CV that you have experience with **${matchedTech}**. `,
+          `Reflecting on your past projects using **${matchedTech}**, `,
+          `Given your hands-on implementation experience with **${matchedTech}**, `,
+          `Regarding your background with **${matchedTech}**: `
         ];
+        
         const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
         q.question = prefix + q.question.charAt(0).toLowerCase() + q.question.slice(1);
       }
@@ -3298,23 +3602,12 @@ function generateDynamicKit(baseKit, cvData, jdVal) {
 
   // Fill gap analysis dynamically
   kit.summary = cvData.insightRationale;
-  kit.gaps = [];
   
-  match.matchedSkills.slice(0, 4).forEach(skill => {
-    kit.gaps.push({
-      skill: skill,
-      status: "match",
-      notes: `Matched required skill found explicitly in candidate's CV.`
-    });
-  });
-  
-  match.missingSkills.slice(0, 4).forEach(skill => {
-    kit.gaps.push({
-      skill: skill,
-      status: "risk",
-      notes: `Unmentioned or missing skill listed in JD requirements.`
-    });
-  });
+  kit.gaps = match.groupedGaps.map(g => ({
+    skill: g.category,
+    status: g.status,
+    notes: g.notes
+  }));
 
   if (cvData.experienceYears < jdSeniority.yearsRequired) {
     kit.gaps.push({

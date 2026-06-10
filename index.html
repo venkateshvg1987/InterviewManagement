@@ -19,7 +19,14 @@
 <body>
   <div class="app-container">
     <!-- Left Sidebar Controls -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="main-sidebar">
+      <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" title="Toggle Sidebar">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
       <h2>Candidate Assessment</h2>
       
       <!-- Mode Toggle Container -->
@@ -85,7 +92,7 @@
     </aside>
 
     <!-- Main Content Area -->
-    <main class="main-content">
+    <main class="main-content" id="main-content">
       
       <!-- Welcome Dashboard / Home State -->
       <section class="welcome-dashboard" id="welcome-dashboard">

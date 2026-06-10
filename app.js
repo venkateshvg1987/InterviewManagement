@@ -768,15 +768,41 @@ btnGenerate.addEventListener("click", async () => {
           updateStep("step-4", "completed");
           
           if (cvVal && !cvVal.includes("Parsing ") && !cvVal.includes("[File uploaded:")) {
-            // Dynamic, candidate-aware kit generation
-            const cvData = parseCV(cvVal);
-            if ((cvData.name === "the candidate" || cvData.name.trim() === "" || cvData.name.length > 50) && uploadedFiles.cv) {
-              cvData.name = cleanCandidateName(uploadedFiles.cv.name.replace(/\.[^/.]+$/, ""));
-            } else if (cvData.name === "the candidate" || cvData.name.trim() === "" || cvData.name.length > 50) {
-              cvData.name = "Candidate";
+            const maskedCV = typeof maskPII === "function" ? maskPII(cvVal) : cvVal;
+            if (typeof generateHash === "function") {
+              generateHash(maskedCV + jdVal + role).then(cvHash => {
+                const cacheKey = "CV_CACHE_" + cvHash;
+                const cachedStr = localStorage.getItem(cacheKey);
+                if (cachedStr) {
+                  console.log("CACHE HIT: Loading assessment from secure hash cache. Skipped processing.");
+                  showResults(JSON.parse(cachedStr));
+                  return;
+                }
+                
+                // Cache Miss -> Process using Tier-1 JS Screener
+                const cvData = parseCV(maskedCV);
+                if ((cvData.name === "the candidate" || cvData.name.trim() === "" || cvData.name.length > 50) && uploadedFiles.cv) {
+                  cvData.name = cleanCandidateName(uploadedFiles.cv.name.replace(/\.[^/.]+$/, ""));
+                } else if (cvData.name === "the candidate" || cvData.name.trim() === "" || cvData.name.length > 50) {
+                  cvData.name = "Candidate";
+                }
+                const customKit = generateDynamicKit(PRESETS[role], cvData, jdVal);
+                
+                // Save to cache
+                localStorage.setItem(cacheKey, JSON.stringify(customKit));
+                showResults(customKit);
+              });
+            } else {
+              // Fallback
+              const cvData = parseCV(maskedCV);
+              if ((cvData.name === "the candidate" || cvData.name.trim() === "" || cvData.name.length > 50) && uploadedFiles.cv) {
+                cvData.name = cleanCandidateName(uploadedFiles.cv.name.replace(/\.[^/.]+$/, ""));
+              } else if (cvData.name === "the candidate" || cvData.name.trim() === "" || cvData.name.length > 50) {
+                cvData.name = "Candidate";
+              }
+              const customKit = generateDynamicKit(PRESETS[role], cvData, jdVal);
+              showResults(customKit);
             }
-            const customKit = generateDynamicKit(PRESETS[role], cvData, jdVal);
-            showResults(customKit);
           } else {
             // No CV uploaded, load default presets directly
             showResults(PRESETS[role]);
@@ -2179,6 +2205,7 @@ function saveCandidateAssessmentToDB(callback) {
     roleName: currentKit.roleName,
     track: currentKit.candidateInsight ? currentKit.candidateInsight.track : "intermediate",
     date: new Date().toISOString(),
+    expiresAt: Date.now() + (180 * 24 * 60 * 60 * 1000), // 180-Day Auto Deletion (TTL)
     interviewDate: scorecardState.interviewDate || new Date().toISOString().split('T')[0],
     rounds: scorecardState.rounds,
     finalDecision: scorecardState.finalDecision,
@@ -2364,6 +2391,7 @@ function saveScreeningRun(role, totalProcessed, shortlisted) {
     role: role,
     roleName: PRESETS[role].roleName,
     date: new Date().toISOString(),
+    expiresAt: Date.now() + (180 * 24 * 60 * 60 * 1000), // 180-Day Auto Deletion (TTL)
     totalProcessed: totalProcessed,
     shortlistedCount: shortlisted.length,
     yield: totalProcessed > 0 ? Math.round((shortlisted.length / totalProcessed) * 100) : 0,
@@ -3135,6 +3163,11 @@ function cleanCandidateName(rawName) {
 
 // Local dynamic CV-aware generator helpers (Seniority & Core Domain customizer)
 function parseCV(cvText) {
+  // Step 1: Firewall - Apply PII Masking before extraction
+  if (typeof maskPII === "function") {
+    cvText = maskPII(cvText);
+  }
+
   const cvData = {
     name: "the candidate",
     companies: [],
@@ -3658,4 +3691,28 @@ function generateDynamicKit(baseKit, cvData, jdVal) {
   });
 
   return kit;
+}
+
+// ==========================================
+// SECURITY & COST OPTIMIZATION (DPDP ENGINE)
+// ==========================================
+
+// 1. PII Masking Engine (Anonymization Firewall)
+function maskPII(text) {
+  if (!text) return text;
+  // Redact Emails
+  text = text.replace(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi, "[REDACTED_EMAIL]");
+  // Redact Phone Numbers
+  text = text.replace(/(\+?\d{1,3}[\s-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/g, "[REDACTED_PHONE]");
+  // Redact Links (LinkedIn, Portfolios, URLs)
+  text = text.replace(/(https?:\/\/[^\s]+|www\.[^\s]+|linkedin\.com\/in\/[^\s]+)/gi, "[REDACTED_LINK]");
+  return text;
+}
+
+// 2. Cryptographic Hash Generator (SHA-256 for Cache Fingerprinting)
+async function generateHash(text) {
+  const msgUint8 = new TextEncoder().encode(text);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }

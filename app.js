@@ -821,13 +821,13 @@ function resetLoadingSteps() {
   const steps = ["step-1", "step-2", "step-3", "step-4"];
   steps.forEach(id => {
     const el = document.getElementById(id);
-    el.className = "loading-step pending";
+    if (el) el.className = "loading-step pending";
   });
 }
 
 function updateStep(id, status) {
   const el = document.getElementById(id);
-  el.className = `loading-step ${status}`;
+  if (el) el.className = `loading-step ${status}`;
 }
 
 // Display results dashboard

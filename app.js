@@ -2205,7 +2205,7 @@ function saveCandidateAssessmentToDB(callback) {
     roleName: currentKit.roleName,
     track: currentKit.candidateInsight ? currentKit.candidateInsight.track : "intermediate",
     date: new Date().toISOString(),
-    expiresAt: Date.now() + (180 * 24 * 60 * 60 * 1000), // 180-Day Auto Deletion (TTL)
+    expiresAt: new Date(Date.now() + (180 * 24 * 60 * 60 * 1000)), // 180-Day Auto Deletion (TTL)
     interviewDate: scorecardState.interviewDate || new Date().toISOString().split('T')[0],
     rounds: scorecardState.rounds,
     finalDecision: scorecardState.finalDecision,
@@ -2391,7 +2391,7 @@ function saveScreeningRun(role, totalProcessed, shortlisted) {
     role: role,
     roleName: PRESETS[role].roleName,
     date: new Date().toISOString(),
-    expiresAt: Date.now() + (180 * 24 * 60 * 60 * 1000), // 180-Day Auto Deletion (TTL)
+    expiresAt: new Date(Date.now() + (180 * 24 * 60 * 60 * 1000)), // 180-Day Auto Deletion (TTL)
     totalProcessed: totalProcessed,
     shortlistedCount: shortlisted.length,
     yield: totalProcessed > 0 ? Math.round((shortlisted.length / totalProcessed) * 100) : 0,

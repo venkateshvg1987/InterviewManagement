@@ -132,6 +132,10 @@ document.addEventListener("DOMContentLoaded", () => {
   setupFileUploads();
   setupBulkFileUploads();
   setupTabs();
+  
+  // Run silent background cleanup of expired records (180 days)
+  setTimeout(() => cleanupExpiredRecords(), 3000);
+
   setupSampleCvLoader();
   setupScreenerActions();
   setupHistoryActions();
@@ -3716,3 +3720,50 @@ async function generateHash(text) {
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
+
+// 3. Manual Expiration Cleanup Engine (Bypasses GCP Billing)
+async function cleanupExpiredRecords() {
+  const now = new Date();
+
+  // Clean LocalStorage
+  const evalKey = "TECH_EVAL_INTERVIEWS";
+  let evals = localStorage.getItem(evalKey);
+  if (evals) {
+    evals = JSON.parse(evals);
+    const validEvals = evals.filter(e => !e.expiresAt || new Date(e.expiresAt.seconds ? e.expiresAt.seconds * 1000 : e.expiresAt) > now);
+    if (validEvals.length !== evals.length) {
+      localStorage.setItem(evalKey, JSON.stringify(validEvals));
+      console.log(`[DPDP] Cleaned up ${evals.length - validEvals.length} expired local evaluations.`);
+    }
+  }
+
+  const screenKey = "TECH_EVAL_SCREENINGS";
+  let screens = localStorage.getItem(screenKey);
+  if (screens) {
+    screens = JSON.parse(screens);
+    const validScreens = screens.filter(s => !s.expiresAt || new Date(s.expiresAt.seconds ? s.expiresAt.seconds * 1000 : s.expiresAt) > now);
+    if (validScreens.length !== screens.length) {
+      localStorage.setItem(screenKey, JSON.stringify(validScreens));
+      console.log(`[DPDP] Cleaned up ${screens.length - validScreens.length} expired local screenings.`);
+    }
+  }
+
+  // Clean Firestore
+  if (typeof useFirestore !== 'undefined' && useFirestore && db) {
+    try {
+      const collections = ["interviews", "screenings"];
+      for (const coll of collections) {
+        const snapshot = await db.collection(coll).where("expiresAt", "<", now).get();
+        if (!snapshot.empty) {
+          const batch = db.batch();
+          snapshot.forEach(doc => batch.delete(doc.ref));
+          await batch.commit();
+          console.log(`[DPDP] Cleaned up ${snapshot.size} expired records from Firestore (${coll}).`);
+        }
+      }
+    } catch (err) {
+      console.warn("[DPDP] Silent background cleanup failed or requires index.", err);
+    }
+  }
+}
+

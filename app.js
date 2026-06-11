@@ -809,7 +809,7 @@ btnGenerate.addEventListener("click", async () => {
             const maskedCV = typeof maskPII === "function" ? maskPII(cvVal) : cvVal;
             if (typeof generateHash === "function") {
               generateHash(maskedCV + jdVal + role).then(cvHash => {
-                const cacheKey = "GEMINI_V3_CACHE_" + cvHash;
+                const cacheKey = "GEMINI_V4_CACHE_" + cvHash;
                 const cachedStr = localStorage.getItem(cacheKey);
                 if (cachedStr) {
                   console.log("CACHE HIT: Loading assessment from secure hash cache. Skipped processing.");
@@ -832,7 +832,6 @@ btnGenerate.addEventListener("click", async () => {
                       cvData.name = "Candidate";
                     }
                     const customKit = generateDynamicKit(PRESETS[role], cvData, jdVal);
-                    localStorage.setItem(cacheKey, JSON.stringify(customKit));
                     showResults(customKit);
                   }
                 });

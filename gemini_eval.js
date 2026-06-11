@@ -48,20 +48,39 @@ Respond ONLY with a valid, parsable JSON object using this exact schema:
 `;
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          response_mime_type: "application/json"
-        }
-      })
-    });
+    const urlsToTry = [
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`
+    ];
 
-    if (!response.ok) {
-      const errTxt = await response.text();
-      console.error("Gemini API Error:", errTxt);
+    let response = null;
+    let lastErrTxt = "";
+
+    for (const url of urlsToTry) {
+      response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.1,
+            responseMimeType: "application/json"
+          }
+        })
+      });
+
+      if (response.ok) {
+        break; // Success!
+      } else {
+        lastErrTxt = await response.text();
+        console.warn(`Model failed at ${url}:`, lastErrTxt);
+      }
+    }
+
+    if (!response || !response.ok) {
+      console.error("All Gemini API endpoints failed. Last error:", lastErrTxt);
       return null;
     }
 

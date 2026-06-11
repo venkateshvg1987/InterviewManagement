@@ -89,6 +89,15 @@
 
         <button class="btn-primary" id="btn-screen-candidates">Screen Resumes</button>
       </div>
+      <!-- API Settings -->
+      <div class="sidebar-group" style="margin-top: auto; border-top: 1px solid var(--border-color); padding-top: 16px;">
+        <label class="sidebar-label" for="api-key-input" style="display: flex; justify-content: space-between; align-items: center;">
+          Gemini API Key
+          <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: normal;">(Saved locally)</span>
+        </label>
+        <input type="password" id="api-key-input" placeholder="AIzaSy..." style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; font-family: monospace; font-size: 0.85rem; background: var(--bg-tertiary); color: var(--text-primary); margin-bottom: 4px;">
+        <button type="button" id="btn-save-api-key" style="width: 100%; padding: 6px; background: var(--border-color); border: none; border-radius: 4px; color: var(--text-primary); cursor: pointer; font-size: 0.8rem; font-weight: 600;">Save Key</button>
+      </div>
     </aside>
 
     <!-- Main Content Area -->
@@ -197,6 +206,7 @@
   </div>
 
   <script src="presets.js"></script>
+  <script src="gemini_eval.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -141,6 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupHistoryActions();
   setupSidebarToggle();
   loadPanelistConfiguration();
+  setupApiKey();
 });
 
 
@@ -156,6 +157,29 @@ function setupSampleCvLoader() {
       uploadedFiles.cv = null;
     }
   });
+}
+
+function setupApiKey() {
+  const apiKeyInput = document.getElementById("api-key-input");
+  const btnSaveKey = document.getElementById("btn-save-api-key");
+  const savedKey = localStorage.getItem("GEMINI_API_KEY");
+  
+  if (savedKey) {
+    apiKeyInput.value = savedKey;
+  }
+  
+  if (btnSaveKey) {
+    btnSaveKey.addEventListener("click", () => {
+      const val = apiKeyInput.value.trim();
+      if (val) {
+        localStorage.setItem("GEMINI_API_KEY", val);
+        alert("API Key saved to your local browser securely.");
+      } else {
+        localStorage.removeItem("GEMINI_API_KEY");
+        alert("API Key removed.");
+      }
+    });
+  }
 }
 
 // Mode Selection Handler
@@ -397,10 +421,20 @@ function setupScreenerActions() {
           cvData.name = cleanCandidateName(fileData.name.replace(/\.[^/.]+$/, ""));
         }
 
-        const match = calculateMatchMetrics(cvData, jdSkills, jdSeniority.yearsRequired, jdSeniority.level);
+        let match;
+        const geminiResult = await evaluateWithGemini(fileData.content, jdVal, role, true);
         
-        // Filter out candidates with score < 80%
-        if (match.score >= 80) {
+        if (geminiResult && geminiResult.matchMetrics) {
+          match = geminiResult.matchMetrics;
+          cvData.experienceYears = match.experienceYears;
+          cvData.seniority = match.seniority;
+        } else {
+          // Fallback to Tier-1 JS Screener
+          match = calculateMatchMetrics(cvData, jdSkills, jdSeniority.yearsRequired, jdSeniority.level);
+        }
+        
+        // Filter out candidates with score < 80% (or whatever logic applies, maybe we lower it since LLM is strict)
+        if (match.score >= 50) {
           screenedCandidatesList.push({
             name: cvData.name,
             filename: fileData.name,
@@ -783,29 +817,42 @@ btnGenerate.addEventListener("click", async () => {
                   return;
                 }
                 
-                // Cache Miss -> Process using Tier-1 JS Screener
-                const cvData = parseCV(maskedCV);
-                if ((cvData.name === "the candidate" || cvData.name.trim() === "" || cvData.name.length > 50) && uploadedFiles.cv) {
-                  cvData.name = cleanCandidateName(uploadedFiles.cv.name.replace(/\.[^/.]+$/, ""));
-                } else if (cvData.name === "the candidate" || cvData.name.trim() === "" || cvData.name.length > 50) {
-                  cvData.name = "Candidate";
-                }
-                const customKit = generateDynamicKit(PRESETS[role], cvData, jdVal);
-                
-                // Save to cache
-                localStorage.setItem(cacheKey, JSON.stringify(customKit));
-                showResults(customKit);
+                // Cache Miss -> Process using Gemini LLM
+                evaluateWithGemini(maskedCV, jdVal, role, false).then(geminiResult => {
+                  if (geminiResult && geminiResult.kit) {
+                    const customKit = geminiResult.kit;
+                    localStorage.setItem(cacheKey, JSON.stringify(customKit));
+                    showResults(customKit);
+                  } else {
+                    // Fallback to JS Screener if API fails
+                    const cvData = parseCV(maskedCV);
+                    if ((cvData.name === "the candidate" || cvData.name.trim() === "" || cvData.name.length > 50) && uploadedFiles.cv) {
+                      cvData.name = cleanCandidateName(uploadedFiles.cv.name.replace(/\.[^/.]+$/, ""));
+                    } else if (cvData.name === "the candidate" || cvData.name.trim() === "" || cvData.name.length > 50) {
+                      cvData.name = "Candidate";
+                    }
+                    const customKit = generateDynamicKit(PRESETS[role], cvData, jdVal);
+                    localStorage.setItem(cacheKey, JSON.stringify(customKit));
+                    showResults(customKit);
+                  }
+                });
               });
             } else {
-              // Fallback
-              const cvData = parseCV(maskedCV);
-              if ((cvData.name === "the candidate" || cvData.name.trim() === "" || cvData.name.length > 50) && uploadedFiles.cv) {
-                cvData.name = cleanCandidateName(uploadedFiles.cv.name.replace(/\.[^/.]+$/, ""));
-              } else if (cvData.name === "the candidate" || cvData.name.trim() === "" || cvData.name.length > 50) {
-                cvData.name = "Candidate";
-              }
-              const customKit = generateDynamicKit(PRESETS[role], cvData, jdVal);
-              showResults(customKit);
+              // Fallback without hashing
+              evaluateWithGemini(maskedCV, jdVal, role, false).then(geminiResult => {
+                if (geminiResult && geminiResult.kit) {
+                  showResults(geminiResult.kit);
+                } else {
+                  const cvData = parseCV(maskedCV);
+                  if ((cvData.name === "the candidate" || cvData.name.trim() === "" || cvData.name.length > 50) && uploadedFiles.cv) {
+                    cvData.name = cleanCandidateName(uploadedFiles.cv.name.replace(/\.[^/.]+$/, ""));
+                  } else if (cvData.name === "the candidate" || cvData.name.trim() === "" || cvData.name.length > 50) {
+                    cvData.name = "Candidate";
+                  }
+                  const customKit = generateDynamicKit(PRESETS[role], cvData, jdVal);
+                  showResults(customKit);
+                }
+              });
             }
           } else {
             // No CV uploaded, load default presets directly

@@ -22,6 +22,11 @@ ${maskedCV}
 
 Analyze the candidate strictly against the Job Description.
 
+SCORING RULES:
+- CRITICAL: If the candidate is missing core, required technologies central to the role (e.g., lacking AI, RAG, LLM, or Python experience for an AI Engineer role), you MUST drastically penalize the score (drop the score to < 40%).
+- Do NOT inflate the score simply because the candidate has many years of experience in an unrelated stack (e.g. a Java developer applying for an AI role).
+- Base the score on TRUE semantic overlap of daily responsibilities and technical stack.
+
 Respond ONLY with a valid, parsable JSON object using this exact schema:
 {
   "score": <number between 0 and 100 based on true semantic match of skills and experience>,

@@ -160,26 +160,7 @@ function setupSampleCvLoader() {
 }
 
 function setupApiKey() {
-  const apiKeyInput = document.getElementById("api-key-input");
-  const btnSaveKey = document.getElementById("btn-save-api-key");
-  const savedKey = localStorage.getItem("GEMINI_API_KEY");
-  
-  if (savedKey) {
-    apiKeyInput.value = savedKey;
-  }
-  
-  if (btnSaveKey) {
-    btnSaveKey.addEventListener("click", () => {
-      const val = apiKeyInput.value.trim();
-      if (val) {
-        localStorage.setItem("GEMINI_API_KEY", val);
-        alert("API Key saved to your local browser securely.");
-      } else {
-        localStorage.removeItem("GEMINI_API_KEY");
-        alert("API Key removed.");
-      }
-    });
-  }
+  // Hardcoded in gemini_eval.js, UI removed
 }
 
 // Mode Selection Handler

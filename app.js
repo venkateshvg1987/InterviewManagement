@@ -33,7 +33,7 @@ try {
   if (typeof firebase !== 'undefined') {
     firebase.initializeApp(firebaseConfig);
     db = firebase.firestore();
-    useFirestore = true;
+    useFirestore = false; // Disabled to prevent hang due to corporate firewall blocking Firebase streams
     console.log("Firebase Firestore initialized successfully.");
   } else {
     console.warn("Firebase compat SDK not loaded. Falling back to LocalStorage.");

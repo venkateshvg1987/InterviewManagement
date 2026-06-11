@@ -3071,7 +3071,9 @@ const SKILL_KEYWORDS = [
   // Secondary Critical Skills
   "Spring Cloud", "Hibernate", "TypeScript", "SQL", "MySQL", "MongoDB", "Redis", "Elasticsearch", "Vector database", "Docker", "CI/CD",
   // Tertiary / Supporting Skills
-  "JPA", "RxJS", "NgRx", "Signals", "JavaScript", "HTML", "CSS", "C++", "Scala", "Oracle", "Cassandra", "Neo4j", "HNSW", "IVF", "pgvector", "Qdrant", "Pinecone", "Milvus", "RabbitMQ", "gRPC", "REST API", "RESTful", "GraphQL", "WebClient", "Spring AI", "LangChain", "LangGraph", "LlamaIndex", "Design Patterns", "SOLID", "OOP", "MVC", "Event-driven", "CQRS", "DDD", "Domain-Driven Design", "ECS", "EKS", "S3", "RDS", "EC2", "K8s", "Terraform", "Maven", "Gradle", "Git", "Prompt Engineering", "Fine-tuning", "Embeddings", "Agentic Workflows", "Multi-agent", "Triton", "vLLM", "Ollama", "Hugging Face", "Arize", "TruLens", "Phoenix", "Observability", "Telemetry", "MLOps", "EU AI Act", "GDPR", "HIPAA", "Sovereignty", "AI safety", "NeMo Guardrails", "Llama Guard", "PII"
+  "JPA", "RxJS", "NgRx", "Signals", "JavaScript", "HTML", "CSS", "C++", "Scala", "Oracle", "Cassandra", "Neo4j", "HNSW", "IVF", "pgvector", "Qdrant", "Pinecone", "Milvus", "RabbitMQ", "ActiveMQ", "gRPC", "REST API", "RESTful", "GraphQL", "WebClient", "Spring AI", "LangChain", "LangGraph", "LlamaIndex", "Design Patterns", "SOLID", "OOP", "MVC", "Event-driven", "CQRS", "DDD", "Domain-Driven Design", "ECS", "EKS", "S3", "RDS", "EC2", "K8s", "Terraform", "Maven", "Gradle", "Git", "Prompt Engineering", "Fine-tuning", "Embeddings", "Agentic Workflows", "Multi-agent", "Triton", "vLLM", "Ollama", "Hugging Face", "Arize", "TruLens", "Phoenix", "Observability", "Telemetry", "MLOps", "EU AI Act", "GDPR", "HIPAA", "Sovereignty", "AI safety", "NeMo Guardrails", "Llama Guard", "PII",
+  // Advanced Dev, DB, & Security (Added for Full Stack JD)
+  "Jenkins", "GitHub Actions", "Azure DevOps", "SonarQube", "Nexus", "Artifactory", "OAuth 2.0", "JWT", "SSO", "Keycloak", "OWASP", "JUnit 5", "Mockito", "PrimeNG", "Reactive Forms", "Query Optimization", "Indexing", "Stored Procedures", "OpenAPI", "Swagger", "Postman", "Circuit Breaker", "Service Discovery", "Eureka", "Consul", "API Gateway"
 ];
 
 // Semantic groupings for the Match Summary and Question generation
@@ -3107,7 +3109,11 @@ const SKILL_ALIASES = {
   "azure": ["microsoft azure"],
   "microservices": ["micro-services", "distributed systems", "service-oriented architecture"],
   "event-driven": ["event driven", "event-driven architecture", "eda"],
-  "kafka": ["apache kafka", "confluent kafka"]
+  "kafka": ["apache kafka", "confluent kafka"],
+  "ci/cd": ["jenkins", "github actions", "azure devops", "gitlab ci", "continuous integration"],
+  "message broker": ["kafka", "rabbitmq", "activemq"],
+  "api design": ["openapi", "swagger", "rest api", "graphql"],
+  "testing": ["junit 5", "mockito", "integration testing", "unit testing"]
 };
 
 // Helper to extract keywords from text

@@ -3307,8 +3307,8 @@ function calculateMatchMetrics(cvData, jdSkills, jdYears, jdLevel) {
   
   let skillMatchPct = jdSkills.length > 0 ? (matchedSkills.length / jdSkills.length) * 100 : 80;
   
-  // Skill match penalty: Deduct 40% from skill match score if matches less than 40% of JD-required skills
-  if (jdSkills.length > 0 && (matchedSkills.length / jdSkills.length) < 0.40) {
+  // Skill match penalty: Deduct 40% from skill match score if matches less than 50% of JD-required skills
+  if (jdSkills.length > 0 && (matchedSkills.length / jdSkills.length) < 0.50) {
     skillMatchPct = Math.max(0, skillMatchPct - 40);
   }
   
@@ -3456,9 +3456,9 @@ function generateDynamicKit(baseKit, cvData, jdVal) {
   const company = cvData.companies.length > 0 ? cvData.companies[0] : "Previous Employer";
   const firstTech = cvData.tech.length > 0 ? cvData.tech[0] : "Core Stack";
   
-  // Extract JD details - Limit to Top 4 Critical Skills for focused QA
+  // Extract JD details - Limit to Top 10 Critical Skills to prevent missing core languages (e.g. Python, RAG)
   const allJdSkills = extractSkills(jdVal);
-  const jdSkills = allJdSkills.slice(0, 4);
+  const jdSkills = allJdSkills.slice(0, 10);
   const jdSeniority = parseJDSeniority(jdVal);
   
   // Compute match metrics

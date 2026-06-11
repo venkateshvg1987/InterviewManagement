@@ -809,7 +809,7 @@ btnGenerate.addEventListener("click", async () => {
             const maskedCV = typeof maskPII === "function" ? maskPII(cvVal) : cvVal;
             if (typeof generateHash === "function") {
               generateHash(maskedCV + jdVal + role).then(cvHash => {
-                const cacheKey = "GEMINI_CACHE_" + cvHash;
+                const cacheKey = "GEMINI_V3_CACHE_" + cvHash;
                 const cachedStr = localStorage.getItem(cacheKey);
                 if (cachedStr) {
                   console.log("CACHE HIT: Loading assessment from secure hash cache. Skipped processing.");

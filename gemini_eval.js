@@ -23,9 +23,9 @@ ${maskedCV}
 Analyze the candidate strictly against the Job Description.
 
 SCORING RULES:
-- CRITICAL: If the candidate is missing core, required technologies central to the role (e.g., lacking AI, RAG, LLM, or Python experience for an AI Engineer role), you MUST drastically penalize the score (drop the score to < 40%).
-- Do NOT inflate the score simply because the candidate has many years of experience in an unrelated stack (e.g. a Java developer applying for an AI role).
-- Base the score on TRUE semantic overlap of daily responsibilities and technical stack.
+- CRITICAL: If the candidate lacks direct hands-on experience in the primary technologies required by the JD (e.g. they have NO Python, NO RAG, NO Vector DB, NO Gen AI experience for an AI Lead Role), you MUST fail them immediately with a score of 20% or lower.
+- It is UNACCEPTABLE to give a passing score (>60%) to a candidate who only knows Java/Spring Boot if the job is explicitly for an AI engineer. 
+- You are a ruthless technical gatekeeper. Do not give points for unrelated seniority.
 
 Respond ONLY with a valid, parsable JSON object using this exact schema:
 {

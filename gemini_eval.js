@@ -48,7 +48,7 @@ Respond ONLY with a valid, parsable JSON object using this exact schema:
 `;
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -62,7 +62,6 @@ Respond ONLY with a valid, parsable JSON object using this exact schema:
     if (!response.ok) {
       const errTxt = await response.text();
       console.error("Gemini API Error:", errTxt);
-      alert("Error contacting Gemini API. Check console or API key.");
       return null;
     }
 
@@ -91,7 +90,6 @@ Respond ONLY with a valid, parsable JSON object using this exact schema:
     };
   } catch (err) {
     console.error("Error evaluating with Gemini:", err);
-    alert("Failed to parse Gemini response.");
     return null;
   }
 }
